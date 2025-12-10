@@ -1,13 +1,13 @@
-import React from 'react';
 import { MessageCircle } from 'lucide-react';
 
 interface ChatToggleProps {
   className?: string;
 }
 
-const ChatToggle: React.FC<ChatToggleProps> = ({ className }) => {
+const ChatToggle = ({ className }: ChatToggleProps) => {
   const toggleChat = () => {
-    if (window.Tawk_API) {
+    // TypeScript now knows about Tawk_API from globals.d.ts
+    if (window.Tawk_API?.toggle) {
       window.Tawk_API.toggle();
     } else {
       // If chat isn't loaded, scroll to contact section

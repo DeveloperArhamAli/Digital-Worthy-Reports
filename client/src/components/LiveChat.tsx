@@ -1,23 +1,5 @@
 import { useEffect } from 'react';
 
-interface WindowWithTawk extends Window {
-  Tawk_API?: {
-    onLoad?: () => void;
-    onChatMaximized?: () => void;
-    onChatMinimized?: () => void;
-    onChatHidden?: () => void;
-    onChatStarted?: () => void;
-    onChatEnded?: () => void;
-    maximize?: () => void;
-    minimize?: () => void;
-    toggle?: () => void;
-    showWidget?: () => void;
-    hideWidget?: () => void;
-    [key: string]: any;
-  };
-  Tawk_LoadStart?: Date;
-}
-
 const LiveChat = () => {
   useEffect(() => {
     const propertyId = import.meta.env.VITE_TAWKTO_PROPERTY_ID;
@@ -29,8 +11,7 @@ const LiveChat = () => {
     }
 
     // Check if script is already loaded
-    const win = window as WindowWithTawk;
-    if (win.Tawk_API && win.Tawk_API.showWidget) {
+    if (window.Tawk_API?.showWidget) {
       return;
     }
 
@@ -55,43 +36,24 @@ const LiveChat = () => {
     }
 
     // Initialize
-    win.Tawk_API = win.Tawk_API || {};
-    win.Tawk_LoadStart = new Date();
+    window.Tawk_API = window.Tawk_API || {};
+    window.Tawk_LoadStart = new Date();
 
     return () => {
       // Cleanup function
-      // Note: Tawk.to doesn't provide a proper cleanup API
-      // The script will remain loaded but hidden
+      const scripts = document.head.getElementsByTagName('script');
+      for (let i = 0; i < scripts.length; i++) {
+        if (scripts[i].src.includes('tawk.to')) {
+          document.head.removeChild(scripts[i]);
+          break;
+        }
+      }
     };
   }, []);
 
-  // Manual chat controls
-  const chatControls = {
-    open: () => {
-      const win = window as WindowWithTawk;
-      if (win.Tawk_API && win.Tawk_API.maximize) {
-        win.Tawk_API.maximize();
-      }
-    },
-    close: () => {
-      const win = window as WindowWithTawk;
-      if (win.Tawk_API && win.Tawk_API.minimize) {
-        win.Tawk_API.minimize();
-      }
-    },
-    toggle: () => {
-      const win = window as WindowWithTawk;
-      if (win.Tawk_API && win.Tawk_API.toggle) {
-        win.Tawk_API.toggle();
-      }
-    }
-  };
-
-  // Optional: Floating Action Button for mobile
   const toggleChat = () => {
-    const win = window as WindowWithTawk;
-    if (win.Tawk_API) {
-      win.Tawk_API.toggle?.();
+    if (window.Tawk_API?.toggle) {
+      window.Tawk_API.toggle();
     }
   };
 
