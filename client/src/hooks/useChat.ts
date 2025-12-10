@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 
-declare global {
-  interface Window {
-    Tawk_API?: {
-      onLoad?: () => void;
-      onChatMaximized?: () => void;
-      onChatMinimized?: () => void;
-      onChatHidden?: () => void;
-      onChatStarted?: () => void;
-      onChatEnded?: () => void;
-      maximize?: () => void;
-      minimize?: () => void;
-      toggle?: () => void;
-      showWidget?: () => void;
-      hideWidget?: () => void;
-      [key: string]: any;
-    };
-  }
+interface TawkAPI {
+  onLoad?: () => void;
+  onChatMaximized?: () => void;
+  onChatMinimized?: () => void;
+  onChatHidden?: () => void;
+  onChatStarted?: () => void;
+  onChatEnded?: () => void;
+  maximize?: () => void;
+  minimize?: () => void;
+  toggle?: () => void;
+  showWidget?: () => void;
+  hideWidget?: () => void;
+  [key: string]: any;
+}
+
+interface WindowWithTawk extends Window {
+  Tawk_API?: TawkAPI;
 }
 
 export const useChat = () => {
@@ -26,35 +26,37 @@ export const useChat = () => {
 
   // Initialize chat
   useEffect(() => {
+    const win = window as WindowWithTawk;
+    
     const initChat = () => {
-      if (!window.Tawk_API) {
-        window.Tawk_API = {};
+      if (!win.Tawk_API) {
+        win.Tawk_API = {};
       }
 
       // Set up event handlers
-      window.Tawk_API.onLoad = () => {
+      win.Tawk_API.onLoad = () => {
         setIsChatLoaded(true);
         console.log('Tawk.to chat loaded');
       };
 
-      window.Tawk_API.onChatMaximized = () => {
+      win.Tawk_API.onChatMaximized = () => {
         setIsChatOpen(true);
         setUnreadMessages(0);
       };
 
-      window.Tawk_API.onChatMinimized = () => {
+      win.Tawk_API.onChatMinimized = () => {
         setIsChatOpen(false);
       };
 
-      window.Tawk_API.onChatHidden = () => {
+      win.Tawk_API.onChatHidden = () => {
         setIsChatOpen(false);
       };
 
-      window.Tawk_API.onChatStarted = () => {
+      win.Tawk_API.onChatStarted = () => {
         // Track chat started
       };
 
-      window.Tawk_API.onChatEnded = () => {
+      win.Tawk_API.onChatEnded = () => {
         // Track chat ended
       };
 
@@ -72,20 +74,23 @@ export const useChat = () => {
   }, [isChatOpen]);
 
   const openChat = useCallback(() => {
-    if (window.Tawk_API && window.Tawk_API.maximize) {
-      window.Tawk_API.maximize();
+    const win = window as WindowWithTawk;
+    if (win.Tawk_API && win.Tawk_API.maximize) {
+      win.Tawk_API.maximize();
     }
   }, []);
 
   const closeChat = useCallback(() => {
-    if (window.Tawk_API && window.Tawk_API.minimize) {
-      window.Tawk_API.minimize();
+    const win = window as WindowWithTawk;
+    if (win.Tawk_API && win.Tawk_API.minimize) {
+      win.Tawk_API.minimize();
     }
   }, []);
 
   const toggleChat = useCallback(() => {
-    if (window.Tawk_API && window.Tawk_API.toggle) {
-      window.Tawk_API.toggle();
+    const win = window as WindowWithTawk;
+    if (win.Tawk_API && win.Tawk_API.toggle) {
+      win.Tawk_API.toggle();
     }
   }, []);
 

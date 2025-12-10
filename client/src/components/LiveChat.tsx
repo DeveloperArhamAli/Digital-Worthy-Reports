@@ -1,13 +1,24 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
-declare global {
-  interface Window {
-    Tawk_API?: any;
-    Tawk_LoadStart?: Date;
-  }
+interface WindowWithTawk extends Window {
+  Tawk_API?: {
+    onLoad?: () => void;
+    onChatMaximized?: () => void;
+    onChatMinimized?: () => void;
+    onChatHidden?: () => void;
+    onChatStarted?: () => void;
+    onChatEnded?: () => void;
+    maximize?: () => void;
+    minimize?: () => void;
+    toggle?: () => void;
+    showWidget?: () => void;
+    hideWidget?: () => void;
+    [key: string]: any;
+  };
+  Tawk_LoadStart?: Date;
 }
 
-const LiveChat: React.FC = () => {
+const LiveChat = () => {
   useEffect(() => {
     const propertyId = import.meta.env.VITE_TAWKTO_PROPERTY_ID;
     const widgetName = import.meta.env.VITE_TAWKTO_WIDGET_NAME;
@@ -18,7 +29,8 @@ const LiveChat: React.FC = () => {
     }
 
     // Check if script is already loaded
-    if (window.Tawk_API && window.Tawk_API.showWidget) {
+    const win = window as WindowWithTawk;
+    if (win.Tawk_API && win.Tawk_API.showWidget) {
       return;
     }
 
@@ -43,36 +55,8 @@ const LiveChat: React.FC = () => {
     }
 
     // Initialize
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = new Date();
-
-    // Customize appearance to match theme
-    window.Tawk_API.customize = {
-      theme: {
-        primaryColor: '#39ff14', // Neon green
-        secondaryColor: '#121212', // Dark background
-        backgroundColor: '#1a1a1a',
-        textColor: '#e0e0e0'
-      },
-      chatStyle: {
-        color: '#ffffff',
-        backgroundColor: '#39ff14'
-      }
-    };
-
-    // Optional: Auto-start chat after delay
-    const startChatAfterDelay = () => {
-      setTimeout(() => {
-        if (window.Tawk_API && window.Tawk_API.maximize) {
-          // Only auto-start on mobile or based on certain conditions
-          if (window.innerWidth < 768) {
-            // window.Tawk_API.maximize();
-          }
-        }
-      }, 30000); // 30 seconds delay
-    };
-
-    startChatAfterDelay();
+    win.Tawk_API = win.Tawk_API || {};
+    win.Tawk_LoadStart = new Date();
 
     return () => {
       // Cleanup function
@@ -84,30 +68,47 @@ const LiveChat: React.FC = () => {
   // Manual chat controls
   const chatControls = {
     open: () => {
-      if (window.Tawk_API && window.Tawk_API.maximize) {
-        window.Tawk_API.maximize();
+      const win = window as WindowWithTawk;
+      if (win.Tawk_API && win.Tawk_API.maximize) {
+        win.Tawk_API.maximize();
       }
     },
     close: () => {
-      if (window.Tawk_API && window.Tawk_API.minimize) {
-        window.Tawk_API.minimize();
+      const win = window as WindowWithTawk;
+      if (win.Tawk_API && win.Tawk_API.minimize) {
+        win.Tawk_API.minimize();
       }
     },
     toggle: () => {
-      if (window.Tawk_API && window.Tawk_API.toggle) {
-        window.Tawk_API.toggle();
+      const win = window as WindowWithTawk;
+      if (win.Tawk_API && win.Tawk_API.toggle) {
+        win.Tawk_API.toggle();
       }
     }
   };
 
-  // Expose controls globally if needed
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).chatControls = chatControls;
+  // Optional: Floating Action Button for mobile
+  const toggleChat = () => {
+    const win = window as WindowWithTawk;
+    if (win.Tawk_API) {
+      win.Tawk_API.toggle?.();
     }
-  }, []);
+  };
 
-  return null; // Tawk.to injects its own UI
+  return (
+    <>
+      {/* Optional Floating Action Button for mobile */}
+      <button
+        onClick={toggleChat}
+        className="fixed bottom-6 right-6 md:hidden z-50 p-3 bg-neon-green text-black rounded-full shadow-lg hover:bg-neon-green-dark transition-all duration-300"
+        aria-label="Open chat"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
+    </>
+  );
 };
 
 export default LiveChat;

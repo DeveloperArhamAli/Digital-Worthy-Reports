@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { CreditCard, Loader } from 'lucide-react';
@@ -11,12 +11,12 @@ interface PaymentFormProps {
   onSuccess: (result: any) => void;
 }
 
-const PaymentForm: React.FC<PaymentFormProps> = ({
+const PaymentForm = ({
   paymentMethod,
   paymentDetails,
   customerInfo,
   onSuccess
-}) => {
+}: PaymentFormProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stripe = useStripe();
@@ -70,7 +70,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         throw new Error(stripeError.message);
       }
 
-      if (paymentIntent.status === 'succeeded') {
+      if (paymentIntent && paymentIntent.status === 'succeeded') {
         // 3. Send payment success to backend
         await fetch('/api/process-payment-success', {
           method: 'POST',
@@ -126,7 +126,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-  const onPayPalApprove = async (data: any) => {
+  const onPayPalApprove = async (data: { orderID: string }) => {
     try {
       const response = await fetch('/api/capture-paypal-order', {
         method: 'POST',
