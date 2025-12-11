@@ -1,3 +1,4 @@
+import { BrowserRouter as Router } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import PricingSection from './components/PricingSection';
@@ -8,27 +9,32 @@ import FAQSection from './components/FAQSection';
 import Footer from './components/Footer';
 import LiveChat from './components/LiveChat';
 import ChatToggle from './components/ChatToggle';
+import { PlanProvider } from './contexts/PlanContext';
 
 function App() {
   return (
-    <div className="min-h-screen bg-black">
-      <Navbar />
-      <main>
-        <Hero />
-        <PricingSection />
-        <ServicesSection />
-        <TestimonialsSection />
-        <PricingCTA />
-        <FAQSection />
-        
-        {/* Add Chat Toggle Button in Hero or elsewhere */}
-        <div className="container-custom py-8 text-center">
-          <ChatToggle />
+    <Router>
+      <PlanProvider>
+        <div className="min-h-screen bg-black">
+          <Navbar />
+          <main>
+            <Hero />
+            <PricingSection />
+            <ServicesSection />
+            <TestimonialsSection />
+            <PricingCTA />
+            <FAQSection />
+            
+            {/* Add Chat Toggle Button in Hero or elsewhere */}
+            <div className="container-custom py-8 text-center">
+              <ChatToggle />
+            </div>
+          </main>
+          <Footer />
+          <LiveChat />
         </div>
-      </main>
-      <Footer />
-      <LiveChat />
-    </div>
+      </PlanProvider>
+    </Router>
   );
 }
 

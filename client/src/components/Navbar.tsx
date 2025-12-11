@@ -5,8 +5,8 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { label: 'Car History', href: '#' },
     { label: 'Car Report', href: '#' },
+    { label: 'Boot Report', href: '#' },
     { label: 'Report Pricing', href: '#' },
   ];
 
@@ -36,9 +36,6 @@ const Navbar: React.FC = () => {
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-neon-green group-hover:w-full transition-all duration-300"></span>
               </a>
             ))}
-            <button className="px-4 py-2 text-sm font-medium text-neon-green border border-neon-green rounded-full hover:bg-neon-green/10 transition-colors duration-200">
-              Log In
-            </button>
           </nav>
 
           {/* Mobile menu button */}
@@ -65,9 +62,6 @@ const Navbar: React.FC = () => {
                   {item.label}
                 </a>
               ))}
-              <button className="px-3 py-2 text-sm font-medium text-neon-green border border-neon-green rounded-lg hover:bg-neon-green/10 transition-colors duration-200">
-                Log In
-              </button>
             </div>
           </div>
         )}

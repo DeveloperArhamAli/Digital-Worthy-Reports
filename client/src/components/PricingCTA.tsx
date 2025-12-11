@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Car, CheckCircle, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Car, CheckCircle, CreditCard, AlertCircle } from 'lucide-react';
 import ReportPreview from './ReportPreview';
 import CheckoutModal from './CheckoutModal';
 import PaymentSuccess from './PaymentSuccess';
 import { usePayment } from '../hooks/usePayment';
-import { CustomerInfo } from '../types/payment';
+import { CustomerInfo, ReportPreview as ReportPreviewType } from '../types/payment';
 
 const PricingCTA: React.FC = () => {
   const [step, setStep] = useState<'initial' | 'preview' | 'checkout' | 'success'>('initial');
@@ -16,23 +16,60 @@ const PricingCTA: React.FC = () => {
     vin: ''
   });
   const [selectedReport, setSelectedReport] = useState<'bronze' | 'silver' | 'gold'>('bronze');
+  const [showPlanWarning, setShowPlanWarning] = useState(false);
   
   const {
     isProcessing,
     error,
     preview,
     paymentResult,
+    generatePreview,
+    processPayment,
     reset
   } = usePayment();
 
+  // Load selected plan from localStorage on mount
+  useEffect(() => {
+    const savedPlan = localStorage.getItem('selectedPlan');
+    if (savedPlan) {
+      const plan = JSON.parse(savedPlan);
+      setSelectedReport(plan.name.toLowerCase());
+    }
+  }, []);
+
+  const getSelectedPlanPrice = () => {
+    const prices = {
+      bronze: 50,
+      silver: 80,
+      gold: 100
+    };
+    return prices[selectedReport];
+  };
+
   const handleGetPreview = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if VIN is valid
     if (vin.length !== 17) {
       alert('Please enter a valid 17-digit VIN');
       return;
     }
 
+    // Check if a plan is selected
+    const savedPlan = localStorage.getItem('selectedPlan');
+    if (!savedPlan) {
+      setShowPlanWarning(true);
+      
+      // Scroll to pricing section
+      const pricingSection = document.getElementById('pricing-section');
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
     try {
+      const previewData = await generatePreview(vin);
       setCustomerInfo(prev => ({ ...prev, vin }));
       setStep('preview');
     } catch (err) {
@@ -41,29 +78,48 @@ const PricingCTA: React.FC = () => {
   };
 
   const handleContinueToCheckout = () => {
+    // Double-check plan is selected
+    const savedPlan = localStorage.getItem('selectedPlan');
+    if (!savedPlan) {
+      setShowPlanWarning(true);
+      return;
+    }
+    
     setStep('checkout');
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (result: any) => {
+    // Clear selected plan after successful payment
+    localStorage.removeItem('selectedPlan');
     setStep('success');
   };
 
   const paymentDetails = {
-    amount: selectedReport === 'bronze' ? 40 : selectedReport === 'silver' ? 60 : 90,
+    amount: getSelectedPlanPrice(),
     currency: 'USD',
     description: `${selectedReport.charAt(0).toUpperCase() + selectedReport.slice(1)} Vehicle History Report`,
     reportType: selectedReport
   };
 
+  // Get selected plan name
+  const getSelectedPlanName = () => {
+    const savedPlan = localStorage.getItem('selectedPlan');
+    if (savedPlan) {
+      const plan = JSON.parse(savedPlan);
+      return plan.name;
+    }
+    return 'Bronze'; // default
+  };
+
   return (
-    <section className="py-20 bg-linear-to-br from-black via-gray-900 to-black">
+    <section className="py-20 bg-linear-to-br from-black via-gray-900 to-black" id="pricing-cta">
       <div className="container-custom">
         {step === 'initial' && (
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Side */}
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neon-green/10 border border-neon-green/30 mb-6">
-                <span className="text-neon-green font-semibold">INSTANT ACCESS</span>
+                <span className="text-neon-green font-semibold">STEP 2: ENTER VIN</span>
               </div>
               
               <h2 className="text-5xl font-bold mb-4">
@@ -71,6 +127,43 @@ const PricingCTA: React.FC = () => {
                 <span className="text-neon-green">Vehicle Report</span>
               </h2>
               
+              {/* Selected Plan Display */}
+              {localStorage.getItem('selectedPlan') && (
+                <div className="mb-6 p-4 rounded-xl bg-neon-green/5 border border-neon-green/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-400">Selected Plan</p>
+                      <p className="text-xl font-bold text-neon-green">
+                        {getSelectedPlanName()} Report - ${getSelectedPlanPrice()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('selectedPlan');
+                        window.location.reload();
+                      }}
+                      className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                      Change
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showPlanWarning && (
+                <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
+                    <div>
+                      <p className="text-yellow-500 font-medium">Please select a report plan first</p>
+                      <p className="text-yellow-400/80 text-sm mt-1">
+                        Choose a plan from the pricing section above before entering your VIN.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <h3 className="text-2xl font-semibold text-gray-300 mb-6">
                 Enter your VIN for a free preview
               </h3>
@@ -175,45 +268,33 @@ const PricingCTA: React.FC = () => {
               </button>
             </div>
             
+            {/* Selected Plan Reminder */}
+            <div className="mb-6 p-4 rounded-xl bg-neon-green/5 border border-neon-green/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Selected Plan</p>
+                  <p className="text-xl font-bold text-neon-green">
+                    {getSelectedPlanName()} Report - ${getSelectedPlanPrice()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('selectedPlan');
+                    window.location.href = '#pricing-section';
+                    setTimeout(() => window.location.reload(), 100);
+                  }}
+                  className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Change Plan
+                </button>
+              </div>
+            </div>
+            
             <ReportPreview
               preview={preview}
               reportType={selectedReport}
               onContinue={handleContinueToCheckout}
             />
-
-            {/* Report Type Selection */}
-            <div className="mt-8">
-              <h3 className="text-xl font-semibold text-white mb-4">Select Report Type</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {(['bronze', 'silver', 'gold'] as const).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedReport(type)}
-                    className={`p-4 rounded-xl border transition-all duration-300 ${
-                      selectedReport === type
-                        ? 'border-neon-green bg-neon-green/5'
-                        : 'border-gray-800 bg-gray-900/30 hover:border-gray-700'
-                    }`}
-                  >
-                    <div className="text-left">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-lg font-semibold text-white">
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </span>
-                        <span className="text-2xl font-bold text-neon-green">
-                          ${type === 'bronze' ? 40 : type === 'silver' ? 60 : 90}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-400">
-                        {type === 'bronze' && 'Basic history, title check, theft records'}
-                        {type === 'silver' && 'Everything in Bronze + accidents, service records'}
-                        {type === 'gold' && 'Everything in Silver + market value, verdict'}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 

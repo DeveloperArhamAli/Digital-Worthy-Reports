@@ -2,13 +2,16 @@ import React from 'react';
 import PricingCard from './PricingCard';
 import { PricingPlan } from '../types';
 import { Shield } from 'lucide-react';
+import { usePlan } from '../contexts/PlanContext';
 
 const PricingSection: React.FC = () => {
+  const { selectedPlan, selectPlan } = usePlan();
+
   const pricingPlans: PricingPlan[] = [
     {
       id: 1,
       name: 'Bronze',
-      price: 40,
+      price: 50,
       features: [
         'Basic Vehicle History',
         'Title Information',
@@ -21,7 +24,7 @@ const PricingSection: React.FC = () => {
     {
       id: 2,
       name: 'Silver',
-      price: 60,
+      price: 80,
       features: [
         'Everything in Bronze',
         '+ Accident History',
@@ -34,7 +37,7 @@ const PricingSection: React.FC = () => {
     {
       id: 3,
       name: 'Gold',
-      price: 90,
+      price: 100,
       features: [
         'Everything in Silver',
         '+ Market Value',
@@ -47,12 +50,22 @@ const PricingSection: React.FC = () => {
   ];
 
   const handlePlanSelect = (planId: number) => {
-    console.log('Selected plan:', planId);
-    // Handle plan selection logic here
+    const selectedPlan = pricingPlans.find(plan => plan.id === planId);
+    if (selectedPlan) {
+      selectPlan(selectedPlan);
+      
+      // Scroll to VIN entry section
+      setTimeout(() => {
+        const vinSection = document.getElementById('pricing-cta');
+        if (vinSection) {
+          vinSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+    }
   };
 
   return (
-    <section className="py-20 bg-linear-to-b from-black to-primary-dark">
+    <section id="pricing-section" className="py-20 bg-linear-to-b from-black to-gray-900">
       <div className="container-custom">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -66,6 +79,31 @@ const PricingSection: React.FC = () => {
           </p>
         </div>
 
+        {/* Selected Plan Indicator */}
+        {selectedPlan && (
+          <div className="max-w-2xl mx-auto mb-8 p-4 bg-neon-green/5 border border-neon-green/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">
+                  ✓ Selected: {selectedPlan.name} Report - ${selectedPlan.price}
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  Continue below to enter your VIN
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">Ready to proceed?</span>
+                <a 
+                  href="#pricing-cta"
+                  className="px-3 py-1 text-sm bg-neon-green text-black font-medium rounded hover:bg-neon-green-dark transition-colors"
+                >
+                  Enter VIN
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {pricingPlans.map((plan) => (
@@ -73,6 +111,7 @@ const PricingSection: React.FC = () => {
               key={plan.id}
               plan={plan}
               onClick={handlePlanSelect}
+              isSelected={selectedPlan?.id === plan.id}
             />
           ))}
         </div>
