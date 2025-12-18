@@ -10,6 +10,11 @@ const PricingCTA: React.FC = () => {
   const [step, setStep] = useState<'initial' | 'preview' | 'checkout' | 'success'>('initial');
   const [vin, setVin] = useState('');
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
+    address: null,
+    city: null,
+    state: null,
+    postalCode: null,
+    country: '',
     name: '',
     email: '',
     phone: '',
@@ -70,7 +75,7 @@ const PricingCTA: React.FC = () => {
 
     try {
       const previewData = await generatePreview(vin);
-      setCustomerInfo(prev => ({ ...prev, vin }));
+      setCustomerInfo(prev => ({ ...prev, ...previewData.customerInfo }));
       setStep('preview');
     } catch (err) {
       console.error('Failed to generate preview:', err);
@@ -98,7 +103,8 @@ const PricingCTA: React.FC = () => {
     amount: getSelectedPlanPrice(),
     currency: 'USD',
     description: `${selectedReport.charAt(0).toUpperCase() + selectedReport.slice(1)} Vehicle History Report`,
-    reportType: selectedReport
+    reportType: selectedReport,
+    vin: vin
   };
 
   // Get selected plan name

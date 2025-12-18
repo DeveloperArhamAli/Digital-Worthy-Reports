@@ -128,8 +128,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               paymentMethod={activeTab}
               paymentDetails={paymentDetails}
               customerInfo={customerInfo}
-              onSuccess={onPaymentSuccess}
-            />
+              onSuccess={onPaymentSuccess} onError={function (error: string): void {
+                throw new Error('Function not implemented.');
+              } }            />
 
             {/* Security Badges */}
             <div className="mt-8 pt-6 border-t border-gray-800">

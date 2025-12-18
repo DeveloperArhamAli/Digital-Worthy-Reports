@@ -15,7 +15,7 @@ export const usePayment = () => {
       setError(null);
       
       const data = await paymentService.generatePreview(vin);
-      setPreview(data);
+      setPreview(data.preview);
       
       return data;
     } catch (err: any) {

@@ -1,4 +1,9 @@
 export interface CustomerInfo {
+  address: string | null | undefined;
+  city: string | null | undefined;
+  state: string | null | undefined;
+  postalCode: string | null | undefined;
+  country: string;
   name: string;
   email: string;
   phone: string;
@@ -6,6 +11,7 @@ export interface CustomerInfo {
 }
 
 export interface PaymentDetails {
+  vin: ReactNode;
   amount: number;
   currency: string;
   description: string;
@@ -13,6 +19,13 @@ export interface PaymentDetails {
 }
 
 export interface ReportPreview {
+  vis: string;
+  wmi: string;
+  vds: string;
+  class: string;
+  region: string;
+  country: string;
+  vehicleInfo: any;
   vin: string;
   year: string;
   make: string;
