@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export interface CustomerInfo {
   address: string | null | undefined;
   city: string | null | undefined;
