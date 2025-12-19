@@ -118,10 +118,13 @@ const StripeForm = ({
         amount: paymentDetails.amount * 100, // Convert to cents
         currency: paymentDetails.currency.toLowerCase(),
         customer: {
-          ...customerInfo,
+          name: "Arham",
+          email: "arham@arham.com",
           reportType: paymentDetails.reportType,
           vin: paymentDetails.vin
         },
+        reportType: paymentDetails.reportType,
+        vin: paymentDetails.vin,
         metadata: {
           reportType: paymentDetails.reportType,
           vin: paymentDetails.vin,

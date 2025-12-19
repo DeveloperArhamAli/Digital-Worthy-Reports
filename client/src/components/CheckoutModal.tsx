@@ -54,49 +54,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </div>
 
           {/* Content */}
-          <div className="p-6">
-            {/* Order Summary */}
-            <div className="mb-8 p-4 rounded-xl bg-gray-800/30 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Order Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Report Type</span>
-                  <span className="text-white font-medium">
-                    {paymentDetails.reportType.charAt(0).toUpperCase() + paymentDetails.reportType.slice(1)} Report
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Vehicle VIN</span>
-                  <span className="text-white font-medium">{customerInfo.vin}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Amount</span>
-                  <span className="text-2xl font-bold text-neon-green">
-                    ${paymentDetails.amount}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Customer Info Display */}
-            <div className="mb-8 p-4 rounded-xl bg-gray-800/30 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Your Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-400">Name</p>
-                  <p className="text-white font-medium">{customerInfo.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Email</p>
-                  <p className="text-white font-medium">{customerInfo.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Phone</p>
-                  <p className="text-white font-medium">{customerInfo.phone}</p>
-                </div>
-              </div>
-            </div>
-
+          <div className="p-6 pt-2">
             {/* Payment Method Selection */}
             <div className="mb-6">
               <div className="flex border-b border-gray-800">

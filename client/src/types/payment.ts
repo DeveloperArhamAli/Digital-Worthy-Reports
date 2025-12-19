@@ -21,23 +21,13 @@ export interface PaymentDetails {
 }
 
 export interface ReportPreview {
-  vis: string;
-  wmi: string;
-  vds: string;
-  class: string;
-  region: string;
+  vehicleType: string;
   country: string;
-  vehicleInfo: any;
   vin: string;
   year: string;
   make: string;
   model: string;
-  previewData: {
-    accidents: number;
-    owners: number;
-    lastOdometer: string;
-    titleStatus: string;
-  };
+  manufacturer: string;
 }
 
 export interface PaymentResult {

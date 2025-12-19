@@ -11,19 +11,34 @@ interface VehicleInfo {
   year?: number;
   make?: string;
   model?: string;
-  country?: string;
-  region?: string;
-  class?: string;
-  wmi?: string;
-  vds?: string;
-  vis?: string;
+  trim?: string;
+  bodyStyle?: string;
+  engine?: string;
+  transmission?: string;
+  drivetrain?: string;
+  fuelType?: string;
 }
 
 class ReportService {
   async generateReportPreview(vin: string): Promise<any> {
     try {
+      // Decode VIN
       const vehicleInfo = await this.decodeVIN(vin);
-      return vehicleInfo;
+      
+      // Get basic info from NHTSA API
+      const nhtsaData = await this.fetchNHTSAData(vin);
+      
+      const preview = {
+        vin,
+        year: vehicleInfo.year || nhtsaData.Year,
+        make: vehicleInfo.make || nhtsaData.Make,
+        model: vehicleInfo.model || nhtsaData.Model,
+        vehicleType: nhtsaData.VehicleType,
+        manufacturer: nhtsaData.Manufacturer,
+        country: nhtsaData.PlantCountry,
+      };
+
+      return preview;
     } catch (error) {
       logger.error('Error generating report preview:', error);
       throw error;
@@ -92,34 +107,41 @@ class ReportService {
 
   private async decodeVIN(vin: string): Promise<VehicleInfo> {
     try {
+      // Use NHTSA API for VIN decoding
       const response = await axios.get(
-        `https://api.api-ninjas.com/v1/vinlookup?vin=` + vin,
-        {
-          headers: {
-            'X-Api-Key': "8Hs/ovOErz+YeEhUIpGDOQ==p9J4xci15WwpiKu6",
-          },
-        }
+        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`
       );
 
-      if (response.data) {
-        const results = response.data;
-        console.log('Decoded VIN results:', results);
+      if (response.data.Results) {
+        const results = response.data.Results;
         return {
-          make: results.manufacturer,
-          model: results.model,
-          country: results.country,
-          region: results.region,
-          class: results.class,
-          wmi: results.wmi,
-          vds: results.vds,
-          vis: results.vis,
-          year: parseInt(results.year) || undefined,
+          year: parseInt(results.find((r: any) => r.Variable === 'Model Year')?.Value) || undefined,
+          make: results.find((r: any) => r.Variable === 'Make')?.Value,
+          model: results.find((r: any) => r.Variable === 'Model')?.Value,
+          trim: results.find((r: any) => r.Variable === 'Trim')?.Value,
+          bodyStyle: results.find((r: any) => r.Variable === 'Body Style')?.Value,
+          engine: results.find((r: any) => r.Variable === 'Engine Model')?.Value,
+          transmission: results.find((r: any) => r.Variable === 'Transmission Style')?.Value,
+          drivetrain: results.find((r: any) => r.Variable === 'Drive Type')?.Value,
+          fuelType: results.find((r: any) => r.Variable === 'Fuel Type - Primary')?.Value,
         };
       }
 
       return {};
     } catch (error) {
       logger.warn(`Failed to decode VIN ${vin}:`, error);
+      return {};
+    }
+  }
+
+  private async fetchNHTSAData(vin: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`
+      );
+      return response.data.Results[0] || {};
+    } catch (error) {
+      logger.warn(`Failed to fetch NHTSA data for VIN ${vin}:`, error);
       return {};
     }
   }

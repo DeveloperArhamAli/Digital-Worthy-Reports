@@ -18,6 +18,12 @@ class PaymentController {
         vin,
       } = req.body;
 
+      console.log("amount: ", amount);
+      console.log("currency: ", currency);
+      console.log("customer: ", customer);
+      console.log("reportType: ", reportType);
+      console.log("vin: ", vin);
+
       // Validate input
       if (!amount || !customer || !reportType || !vin) {
         res.status(400).json({ 

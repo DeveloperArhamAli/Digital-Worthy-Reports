@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReportPreview as ReportPreviewType } from '../types/payment';
-import { Shield, AlertTriangle, CheckCircle, Car, Lock, Globe, MapPin, Calendar } from 'lucide-react';
+import { CheckCircle, Car, Lock, Factory, GlobeIcon } from 'lucide-react';
 
 interface ReportPreviewProps {
   preview: ReportPreviewType;
@@ -9,7 +9,7 @@ interface ReportPreviewProps {
 }
 
 const ReportPreview: React.FC<ReportPreviewProps> = ({ preview, reportType, onContinue }) => {
-  console.log('ReportPreview render with preview:', preview);
+  console.log(preview);
   const getReportFeatures = (type: 'bronze' | 'silver' | 'gold') => {
     const features = {
       bronze: [
@@ -81,125 +81,40 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ preview, reportType, onCo
       </div>
 
       {/* Vehicle Information Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {/* Make */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Type */}
         <div className="bg-gray-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <Car className="w-5 h-5 text-blue-400" />
-            <span className="text-sm text-gray-400">Make</span>
+            <span className="text-sm text-gray-400">Type</span>
           </div>
           <div className="text-lg font-semibold text-white">
-            {isPremiumContent(preview.make) ? (
-              <div className="flex items-center gap-1 text-yellow-500">
-                <Lock className="w-4 h-4" />
-                <span>Premium</span>
-              </div>
-            ) : preview.make || 'N/A'}
+            {preview.vehicleType}
           </div>
         </div>
 
-        {/* Model */}
+        {/* Manufacturer */}
         <div className="bg-gray-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <Car className="w-5 h-5 text-purple-400" />
-            <span className="text-sm text-gray-400">Model</span>
+            <Factory className="w-5 h-5 text-green-400" />
+            <span className="text-sm text-gray-400">Manufacturer</span>
           </div>
           <div className="text-lg font-semibold text-white">
-            {isPremiumContent(preview.model) ? (
-              <div className="flex items-center gap-1 text-yellow-500">
-                <Lock className="w-4 h-4" />
-                <span>Premium</span>
-              </div>
-            ) : preview.model || 'N/A'}
+            {preview.manufacturer}
           </div>
         </div>
 
         {/* Country */}
         <div className="bg-gray-800/50 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <Globe className="w-5 h-5 text-green-400" />
+            <GlobeIcon className="w-5 h-5 text-red-400" />
             <span className="text-sm text-gray-400">Country</span>
           </div>
           <div className="text-lg font-semibold text-white">
-            {preview.country || 'N/A'}
+            {preview.country}
           </div>
         </div>
 
-        {/* Region */}
-        <div className="bg-gray-800/50 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin className="w-5 h-5 text-red-400" />
-            <span className="text-sm text-gray-400">Region</span>
-          </div>
-          <div className="text-lg font-semibold text-white">
-            {preview.region || 'N/A'}
-          </div>
-        </div>
-
-        {/* Year */}
-        <div className="bg-gray-800/50 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-orange-400" />
-            <span className="text-sm text-gray-400">Year</span>
-          </div>
-          <div className="text-lg font-semibold text-white">
-            {isPremiumContent(preview.year) ? (
-              <div className="flex items-center gap-1 text-yellow-500">
-                <Lock className="w-4 h-4" />
-                <span>Premium</span>
-              </div>
-            ) : preview.year || 'N/A'}
-          </div>
-        </div>
-
-        {/* Class */}
-        <div className="bg-gray-800/50 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-5 h-5 text-teal-400" />
-            <span className="text-sm text-gray-400">Class</span>
-          </div>
-          <div className="text-lg font-semibold text-white">
-            {isPremiumContent(preview.class) ? (
-              <div className="flex items-center gap-1 text-yellow-500">
-                <Lock className="w-4 h-4" />
-                <span>Premium</span>
-              </div>
-            ) : preview.class || 'N/A'}
-          </div>
-        </div>
-
-        {/* WMI */}
-        <div className="bg-gray-800/50 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-5 h-5 text-cyan-400" />
-            <span className="text-sm text-gray-400">WMI</span>
-          </div>
-          <div className="text-lg font-semibold text-white">
-            {preview.wmi || 'N/A'}
-          </div>
-        </div>
-
-        {/* VDS */}
-        <div className="bg-gray-800/50 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-5 h-5 text-indigo-400" />
-            <span className="text-sm text-gray-400">VDS</span>
-          </div>
-          <div className="text-lg font-semibold text-white">
-            {preview.vds || 'N/A'}
-          </div>
-        </div>
-
-        {/* VIS */}
-        <div className="bg-gray-800/50 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-5 h-5 text-indigo-400" />
-            <span className="text-sm text-gray-400">VIS</span>
-          </div>
-          <div className="text-lg font-semibold text-white">
-            {preview.vis || 'N/A'}
-          </div>
-        </div>
       </div>
 
 
@@ -216,7 +131,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ preview, reportType, onCo
                   Unlock Premium Vehicle Details
                 </h4>
                 <p className="text-gray-400 text-sm">
-                  Make, Model, Year, Class, and more detailed information require premium access
+                  Detailed information require premium access
                 </p>
               </div>
             </div>
