@@ -236,7 +236,7 @@ const StripeForm = ({
                     '::placeholder': {
                       color: '#666'
                     },
-                    iconColor: '#00ff88'
+                    iconColor: '#00ff88' 
                   },
                   invalid: {
                     color: '#ff4444',

@@ -10,7 +10,7 @@ const PricingSection: React.FC = () => {
   const pricingPlans: PricingPlan[] = [
     {
       id: 1,
-      name: 'Bronze',
+      name: 'Basic',
       price: 50,
       features: [
         'Basic Vehicle History',
@@ -19,7 +19,7 @@ const PricingSection: React.FC = () => {
         'Theft Records',
       ],
       isPopular: false,
-      moneyBackDays: 30,
+      moneyBackDays: 3,
     },
     {
       id: 2,
@@ -32,7 +32,7 @@ const PricingSection: React.FC = () => {
         '+ Recall Information',
       ],
       isPopular: true,
-      moneyBackDays: 60,
+      moneyBackDays: 5,
     },
     {
       id: 3,
@@ -45,7 +45,7 @@ const PricingSection: React.FC = () => {
         '+ Buy or Avoid Verdict',
       ],
       isPopular: false,
-      moneyBackDays: 90,
+      moneyBackDays: 7,
     },
   ];
 

@@ -29,6 +29,6 @@ router.get('/report/transaction/:transactionId', ReportController.getReportByTra
 
 // Webhook routes
 router.post('/webhook/stripe', stripeWebhookMiddleware, PaymentController.handleStripeWebhook);
-router.post('/webhook/paypal', paypalWebhookMiddleware, PaymentController.handlePayPalWebhook);
+router.post('/webho ok/paypal',paypalWebhookMiddleware, PaymentController.handlePayPalWebhook);
 
 export default router;

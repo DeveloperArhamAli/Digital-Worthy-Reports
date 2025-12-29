@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, ShieldCheckIcon, X } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,7 +17,7 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 flex items-center justify-center bg-neon-green/10 rounded-lg">
-              <span className="text-neon-green text-lg">🚗</span>
+              <ShieldCheckIcon className="w-7 h-7 text-neon-green" />
             </div>
             <span className="text-xl font-bold text-neon-green tracking-tight">
               DigitalWorthyReports
