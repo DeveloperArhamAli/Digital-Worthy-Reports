@@ -313,3 +313,10 @@
 {"level":"info","message":"Environment: undefined","service":"car-report-api","timestamp":"2025-12-30 15:22:07"}
 {"level":"info","message":"MongoDB connected successfully","service":"car-report-api","timestamp":"2025-12-30 15:22:07"}
 {"level":"info","message":"MongoDB connected successfully","service":"car-report-api","timestamp":"2025-12-30 15:22:07"}
+{"level":"info","message":"::1 - - [30/Dec/2025:10:26:05 +0000] \"POST /api/generate-preview HTTP/1.1\" 200 123 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 OPR/125.0.0.0 (Edition std-2)\"","service":"car-report-api","timestamp":"2025-12-30 15:26:05"}
+{"level":"info","message":"::1 - - [30/Dec/2025:10:26:17 +0000] \"POST /api/generate-preview HTTP/1.1\" 200 186 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 OPR/125.0.0.0 (Edition std-2)\"","service":"car-report-api","timestamp":"2025-12-30 15:26:17"}
+{"level":"info","message":"PayPal initialized in undefined mode","service":"car-report-api","timestamp":"2025-12-30 15:37:16"}
+{"level":"info","message":"Server running on port 3000","service":"car-report-api","timestamp":"2025-12-30 15:37:17"}
+{"level":"info","message":"Environment: undefined","service":"car-report-api","timestamp":"2025-12-30 15:37:17"}
+{"level":"info","message":"MongoDB connected successfully","service":"car-report-api","timestamp":"2025-12-30 15:37:17"}
+{"level":"info","message":"MongoDB connected successfully","service":"car-report-api","timestamp":"2025-12-30 15:37:17"}

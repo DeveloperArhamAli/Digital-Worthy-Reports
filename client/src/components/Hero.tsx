@@ -46,7 +46,7 @@ const Hero: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
             <div className="text-center p-4 rounded-xl bg-gray-900/50 backdrop-blur-sm">
               <div className="text-2xl font-bold text-white">50K+</div>
               <div className="text-sm text-gray-400">Reports Generated</div>
@@ -58,6 +58,10 @@ const Hero: React.FC = () => {
             <div className="text-center p-4 rounded-xl bg-gray-900/50 backdrop-blur-sm">
               <div className="text-2xl font-bold text-white">24/7</div>
               <div className="text-sm text-gray-400">Support</div>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-gray-900/50 backdrop-blur-sm">
+              <div className="text-2xl font-bold text-white">5</div>
+              <div className="text-sm text-gray-400">Trust Rate</div>
             </div>
           </div>
         </div>
