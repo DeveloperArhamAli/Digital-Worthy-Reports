@@ -1,8 +1,14 @@
+import LogoImage from "../assets/images/logo.png";
+
 function Logo() {
     return (
-        <div className="text-2xl font-bold text-(--neon-green) flex items-center gap-2 no-underline transition-all duration-300 ease-[ease] text-shadow: 0 0 10px rgba(57, 255, 20, 0.5)">
-            <i className="ri-car-line"></i>
-            Digital Worthy Reports
+        <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 flex items-center justify-center bg-neon-green/10 rounded-lg">
+                <img src={LogoImage} alt="Digital Worthy Reports Logo" />
+            </div>
+            <span className="text-xl font-bold text-neon-green tracking-tight">
+                DigitalWorthyReports
+            </span>
         </div>
     )
 }
