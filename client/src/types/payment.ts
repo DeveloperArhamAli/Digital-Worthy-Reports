@@ -17,7 +17,7 @@ export interface PaymentDetails {
   amount: number;
   currency: string;
   description: string;
-  reportType: 'bronze' | 'silver' | 'gold';
+  reportType: 'basic' | 'silver' | 'gold';
 }
 
 export interface ReportPreview {

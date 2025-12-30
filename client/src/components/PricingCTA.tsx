@@ -20,7 +20,7 @@ const PricingCTA: React.FC = () => {
     phone: '',
     vin: ''
   });
-  const [selectedReport, setSelectedReport] = useState<'bronze' | 'silver' | 'gold'>('bronze');
+  const [selectedReport, setSelectedReport] = useState<'basic' | 'silver' | 'gold'>('basic');
   const [showPlanWarning, setShowPlanWarning] = useState(false);
   
   const {
@@ -44,7 +44,7 @@ const PricingCTA: React.FC = () => {
 
   const getSelectedPlanPrice = () => {
     const prices = {
-      bronze: 50,
+      basic: 50,
       silver: 80,
       gold: 100
     };
@@ -114,7 +114,7 @@ const PricingCTA: React.FC = () => {
       const plan = JSON.parse(savedPlan);
       return plan.name;
     }
-    return 'Bronze'; // default
+    return 'basic'; // default
   };
 
   return (

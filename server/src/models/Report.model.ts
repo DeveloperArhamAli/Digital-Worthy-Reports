@@ -111,7 +111,7 @@ const ReportSchema: Schema = new Schema({
   },
   reportType: {
     type: String,
-    enum: ['bronze', 'silver', 'gold'],
+    enum: ['Basic', 'silver', 'gold'],
     required: true,
   },
   

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Menu, ShieldCheckIcon, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import LogoImage from "../assets/images/logo.png";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
     { label: 'Car Report', href: '#' },
-    { label: 'Boot Report', href: '#' },
+    { label: 'Boat Report', href: '#' },
     { label: 'Report Pricing', href: '#' },
   ];
 
@@ -16,8 +17,8 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 flex items-center justify-center bg-neon-green/10 rounded-lg">
-              <ShieldCheckIcon className="w-7 h-7 text-neon-green" />
+            <div className="w-10 h-10 flex items-center justify-center bg-neon-green/10 rounded-lg">
+              <img src={LogoImage} alt="Digital Worthy Reports Logo" />
             </div>
             <span className="text-xl font-bold text-neon-green tracking-tight">
               DigitalWorthyReports

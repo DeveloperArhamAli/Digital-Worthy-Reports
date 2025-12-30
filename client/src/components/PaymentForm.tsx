@@ -37,7 +37,7 @@ const stripeOptions = {
 const PaymentSummary = ({ paymentDetails }: { paymentDetails: PaymentDetails }) => {
   const getReportColor = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'bronze': return 'text-amber-500';
+      case 'basic': return 'text-amber-500';
       case 'silver': return 'text-gray-300';
       case 'gold': return 'text-yellow-400';
       default: return 'text-white';
@@ -550,7 +550,7 @@ const PaymentForm = (props: PaymentFormProps) => {
           <div>
             <h4 className="font-semibold text-white">Payment Guarantee</h4>
             <p className="text-sm text-gray-400">
-              Your payment is 100% secure. We offer a {props.paymentDetails.reportType === 'bronze' ? '30' : 
+              Your payment is 100% secure. We offer a {props.paymentDetails.reportType === 'basic' ? '30' : 
                 props.paymentDetails.reportType === 'silver' ? '60' : '90'}-day money-back guarantee.
             </p>
           </div>

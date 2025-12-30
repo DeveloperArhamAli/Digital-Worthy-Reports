@@ -13,10 +13,50 @@ const PricingSection: React.FC = () => {
       name: 'Basic',
       price: 50,
       features: [
-        'Basic Vehicle History',
-        'Title Information',
-        'Odometer Check',
-        'Theft Records',
+        {
+          title: "1 Vehicle Report",
+          provided: true
+        },
+        {
+          title: "Ownership Costs",
+          provided: true
+        },
+        {
+          title: "Accident Information",
+          provided: true
+        },
+        {
+          title: "Market Value Range",
+          provided: true
+        },
+        {
+          title: "Owner's History",
+          provided: true
+        },
+        {
+          title: "Vehicle Specification",
+          provided: false
+        },
+        {
+          title: "Safety Recall Status",
+          provided: false
+        },
+        {
+          title: "Online Listing History",
+          provided: false
+        },
+        {
+          title: "Warranties",
+          provided: false
+        },
+        {
+          title: "Salvage Information",
+          provided: false
+        },
+        {
+          title: "Installed Equipment",
+          provided: false
+        }
       ],
       isPopular: false,
       moneyBackDays: 3,
@@ -26,10 +66,50 @@ const PricingSection: React.FC = () => {
       name: 'Silver',
       price: 80,
       features: [
-        'Everything in Bronze',
-        '+ Accident History',
-        '+ Service Records',
-        '+ Recall Information',
+        {
+          title: "1 Vehicle Report",
+          provided: true
+        },
+        {
+          title: "Ownership Costs",
+          provided: true
+        },
+        {
+          title: "Accident Information",
+          provided: true
+        },
+        {
+          title: "Market Value Range",
+          provided: true
+        },
+        {
+          title: "Owner's History",
+          provided: true
+        },
+        {
+          title: "Vehicle Specification",
+          provided: true
+        },
+        {
+          title: "Safety Recall Status",
+          provided: true
+        },
+        {
+          title: "Online Listing History",
+          provided: false
+        },
+        {
+          title: "Warranties",
+          provided: false
+        },
+        {
+          title: "Salvage Information",
+          provided: false
+        },
+        {
+          title: "Installed Equipment",
+          provided: false
+        }
       ],
       isPopular: true,
       moneyBackDays: 5,
@@ -39,10 +119,50 @@ const PricingSection: React.FC = () => {
       name: 'Gold',
       price: 100,
       features: [
-        'Everything in Silver',
-        '+ Market Value',
-        '+ Ownership Cost',
-        '+ Buy or Avoid Verdict',
+        {
+          title: "1 Vehicle Report",
+          provided: true
+        },
+        {
+          title: "Ownership Costs",
+          provided: true
+        },
+        {
+          title: "Accident Information",
+          provided: true
+        },
+        {
+          title: "Market Value Range",
+          provided: true
+        },
+        {
+          title: "Owner's History",
+          provided: true
+        },
+        {
+          title: "Vehicle Specification",
+          provided: true
+        },
+        {
+          title: "Safety Recall Status",
+          provided: true
+        },
+        {
+          title: "Online Listing History",
+          provided: true
+        },
+        {
+          title: "Warranties",
+          provided: true
+        },
+        {
+          title: "Salvage Information",
+          provided: true
+        },
+        {
+          title: "Installed Equipment",
+          provided: true
+        }
       ],
       isPopular: false,
       moneyBackDays: 7,

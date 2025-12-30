@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export enum ReportType {
-  BRONZE = 'bronze',
+  Basic = 'Basic',
   SILVER = 'silver',
   GOLD = 'gold'
 }

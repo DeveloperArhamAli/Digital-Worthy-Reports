@@ -1,6 +1,6 @@
 import React from 'react';
 import { PricingPlan } from '../types';
-import { Check, Star } from 'lucide-react';
+import { Check, Cross, Star, X } from 'lucide-react';
 
 interface PricingCardProps {
   plan: PricingPlan;
@@ -15,7 +15,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan, onClick, isSelected = f
 
   return (
     <div 
-      className={`relative p-6 rounded-2xl transition-all duration-300 hover:scale-105 cursor-pointer ${
+      className={`relative p-6 rounded-2xl transition-all duration-300 hover:scale-105 cursor-pointer h-fit ${
         isSelected 
           ? 'ring-2 ring-neon-green bg-linear-to-br from-gray-900 to-black border-2 border-neon-green shadow-neon-md'
           : plan.isPopular
@@ -56,8 +56,12 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan, onClick, isSelected = f
       <ul className="space-y-3 mb-8">
         {plan.features.map((feature, index) => (
           <li key={index} className="flex items-start">
-            <Check className="w-5 h-5 text-neon-green mr-3 shrink-0 mt-0.5" />
-            <span className="text-gray-300">{feature}</span>
+            {feature.provided ? (
+              <Check className="w-5 h-5 text-neon-green mr-3 shrink-0 mt-0.5" />
+            ) : (
+              <X className="w-5 h-5 text-red-500 mr-3 shrink-0 mt-0.5" />
+            )}
+            <span className="text-gray-300">{feature.title}</span>
           </li>
         ))}
         <li className="flex items-start">

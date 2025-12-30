@@ -4,15 +4,15 @@ import { CheckCircle, Car, Lock, Factory, GlobeIcon } from 'lucide-react';
 
 interface ReportPreviewProps {
   preview: ReportPreviewType;
-  reportType: 'bronze' | 'silver' | 'gold';
+  reportType: 'basic' | 'silver' | 'gold';
   onContinue: () => void;
 }
 
 const ReportPreview: React.FC<ReportPreviewProps> = ({ preview, reportType, onContinue }) => {
   console.log(preview);
-  const getReportFeatures = (type: 'bronze' | 'silver' | 'gold') => {
+  const getReportFeatures = (type: 'basic' | 'silver' | 'gold') => {
     const features = {
-      bronze: [
+      basic: [
         'Basic Vehicle History',
         'Title Information',
         'Odometer Check',
@@ -20,7 +20,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ preview, reportType, onCo
         '30-Day Money Back'
       ],
       silver: [
-        'Everything in Bronze',
+        'Everything in Basic',
         '+ Accident History',
         '+ Service Records',
         '+ Recall Information',
@@ -37,9 +37,9 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ preview, reportType, onCo
     return features[type];
   };
 
-  const getPrice = (type: 'bronze' | 'silver' | 'gold') => {
+  const getPrice = (type: 'basic' | 'silver' | 'gold') => {
     const prices = {
-      bronze: 50,
+      basic: 50,
       silver: 80,
       gold: 100
     };

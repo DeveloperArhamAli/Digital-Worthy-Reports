@@ -55,7 +55,7 @@ class ReportService {
       
       // Generate verdict for Silver and Gold reports
       let verdict;
-      if (payment.reportType !== ReportType.BRONZE) {
+      if (payment.reportType !== ReportType.Basic) {
         verdict = this.generateVerdict(reportData);
       }
 

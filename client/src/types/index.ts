@@ -3,7 +3,10 @@ export interface PricingPlan {
   name: string;
   price: number;
   tagline?: string;
-  features: string[];
+  features: {
+    title: string;
+    provided: boolean;
+  }[];
   isPopular: boolean;
   moneyBackDays: number;
 }
