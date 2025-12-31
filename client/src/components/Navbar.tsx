@@ -9,13 +9,14 @@ const Navbar: React.FC = () => {
   const navItems = [
     { label: 'Home', to: '/' },
     { label: 'About Us', to: '/about' },
+    { label: 'Pricing', to: '/pricing' },
     { label: 'Contact Us', to: '/contact' },
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full bg-primary-dark/95 backdrop-blur-md border-b border-neon-green/20">
       <div className="container-custom">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-fit">
           {/* Logo */}
           <Logo />
 

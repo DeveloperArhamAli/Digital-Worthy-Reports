@@ -44,16 +44,11 @@ const   ContactPage = () => {
     },
     {
       id: 2,
-      question: 'Do you offer phone support?',
-      answer: 'Yes, we offer phone support Monday through Friday from 9 AM to 6 PM EST. For technical issues or complex inquiries, phone support often provides the quickest resolution.'
-    },
-    {
-      id: 3,
       question: 'Can I get help with interpreting my vehicle report?',
       answer: 'Absolutely! Our support team is trained to help you understand every aspect of your vehicle history report. Just share your report ID or order number with us.'
     },
     {
-      id: 4,
+      id: 3,
       question: 'Do you have a physical office I can visit?',
       answer: 'We operate as a fully remote company to provide the most efficient service nationwide. All support is handled through our digital channels and phone support.'
     },
@@ -117,7 +112,7 @@ const   ContactPage = () => {
       <section className="py-20 bg-linear-to-b from-black to-gray-900">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-3 gap-8 mb-20">
+            <div className="grid lg:grid-cols-2 gap-8 mb-20">
               <div className="text-center p-8 rounded-2xl bg-gray-900/50 border border-gray-800 hover:border-green-400/50 transition-all duration-300">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-400/10 rounded-full mb-6 mx-auto">
                   <Mail className="w-8 h-8 text-green-400" />
@@ -135,29 +130,12 @@ const   ContactPage = () => {
               
               <div className="text-center p-8 rounded-2xl bg-gray-900/50 border border-gray-800 hover:border-green-400/50 transition-all duration-300">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-400/10 rounded-full mb-6 mx-auto">
-                  <Phone className="w-8 h-8 text-green-400" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Phone Support</h3>
-                <p className="text-gray-400 mb-4">For urgent matters and immediate assistance</p>
-                <a 
-                  href="tel:+18885551234" 
-                  className="text-green-400 font-semibold hover:text-green-500 transition-colors"
-                >
-                  (888) 555-1234
-                </a>
-                <p className="text-gray-500 text-sm mt-2">Mon-Fri: 9 AM - 6 PM EST</p>
-              </div>
-              
-              <div className="text-center p-8 rounded-2xl bg-gray-900/50 border border-gray-800 hover:border-green-400/50 transition-all duration-300">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-400/10 rounded-full mb-6 mx-auto">
                   <MapPin className="w-8 h-8 text-green-400" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Mailing Address</h3>
                 <p className="text-gray-400 mb-4">For written correspondence and official documents</p>
                 <div className="text-gray-300">
-                  <p>CarReport Inc.</p>
-                  <p>123 Vehicle Lane</p>
-                  <p>Detroit, MI 48201</p>
+                  <p>1200 new Jersey Avenue, SE Washinton, DC 20590</p>
                 </div>
               </div>
             </div>
@@ -176,22 +154,6 @@ const   ContactPage = () => {
                 </p>
                 
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-gray-900/50">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-lg bg-green-400/10">
-                        <Clock className="w-5 h-5 text-green-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-white font-semibold">Phone Support</h4>
-                        <p className="text-gray-400 text-sm">Immediate assistance</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-medium">9 AM - 6 PM EST</p>
-                      <p className="text-gray-400 text-sm">Monday - Friday</p>
-                    </div>
-                  </div>
-                  
                   <div className="flex items-center justify-between p-4 rounded-xl bg-gray-900/50">
                     <div className="flex items-center gap-4">
                       <div className="p-2 rounded-lg bg-green-400/10">

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import dotenv from 'dotenv';
 
 // Database
 import Database from './config/database';
@@ -13,10 +14,13 @@ import paymentRoutes from './routes/payment.routes';
 
 // Utils
 import { logger } from './utils/logger';
+dotenv.config({ 
+  path: path.resolve(__dirname, '../../.env') 
+});
 
 // Initialize Express
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 Database.connect();
@@ -69,6 +73,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start server
 app.listen(PORT, () => {
+  console.log("server started")
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV}`);
 });

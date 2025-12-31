@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Car, Mail, MapPin, Phone, Facebook, Twitter, Instagram, Linkedin, Send } from 'lucide-react';
+import { Mail, MapPin, Phone, Facebook, Twitter, Instagram, Linkedin, Send } from 'lucide-react';
 import Logo from './Logo';
 import { Link } from 'react-router-dom';
 
@@ -18,6 +18,7 @@ const Footer: React.FC = () => {
   const quickLinks = [
     { label: 'Home', to: '/' },
     { label: 'About Us', to: '/about' },
+    { label: 'Pricing', to: '/pricing' },
     { label: 'Contact', to: '/contact' },
   ];
 
@@ -36,7 +37,7 @@ const Footer: React.FC = () => {
           <div className='w-1/3'>
             <Logo />
             <p className="text-gray-400 my-6">
-              Providing comprehensive vehicle history reports to help you make informed decisions when buying or selling a car.
+              Providing comprehensive vehicle history reports to help you make informed decisions when buying or selling a vehicle.
             </p>
             <div className="flex gap-4">
               {socialLinks.map((social) => (
@@ -77,14 +78,8 @@ const Footer: React.FC = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-neon-green mt-0.5" />
                 <span className="text-gray-400">
-                  123 Auto Street, Motor City, MC 12345
+                  1200 new Jersey Avenue, SE Washinton, DC 20590
                 </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-neon-green" />
-                <a href="tel:+15551234567" className="text-gray-400 hover:text-neon-green transition-colors">
-                  +1 (555) 123-4567
-                </a>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-neon-green" />

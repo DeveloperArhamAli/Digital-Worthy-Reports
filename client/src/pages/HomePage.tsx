@@ -19,6 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import PricingCard from '../components/PricingCard';
+import { Link } from 'react-router-dom';
 
 type ReportType = 'basic' | 'silver' | 'gold';
 
@@ -31,7 +32,6 @@ interface PricingPlan {
     provided: boolean;
   }>;
   isPopular: boolean;
-  moneyBackDays: number;
 }
 
 interface Service {
@@ -89,7 +89,6 @@ const HomePage = () => {
     }
   });
 
-  // Data
   const pricingPlans: PricingPlan[] = [
     {
       id: 1,
@@ -109,7 +108,6 @@ const HomePage = () => {
         { title: "Installed Equipment", provided: false }
       ],
       isPopular: false,
-      moneyBackDays: 3,
     },
     {
       id: 2,
@@ -129,7 +127,6 @@ const HomePage = () => {
         { title: "Installed Equipment", provided: false }
       ],
       isPopular: true,
-      moneyBackDays: 5,
     },
     {
       id: 3,
@@ -149,7 +146,6 @@ const HomePage = () => {
         { title: "Installed Equipment", provided: true }
       ],
       isPopular: false,
-      moneyBackDays: 7,
     },
   ];
 
@@ -158,7 +154,7 @@ const HomePage = () => {
       id: 1,
       icon: FileText,
       title: 'Comprehensive History',
-      description: 'Our reports give you a detailed view of the car\'s title, accident history, and service records.',
+      description: 'Our reports give you a detailed view of the vehicles\'s title, accident history, and service records.',
       linear: 'from-blue-500 to-cyan-500',
     },
     {
@@ -166,7 +162,7 @@ const HomePage = () => {
       icon: Shield,
       title: 'Buy or Avoid Verdict',
       description: 'Our unique rating system gives you a verdict that considers history and condition.',
-      linear: 'from-green-500 to-emerald-500',
+      linear: 'from-neon-green/75 to-emerald-500',
     },
     {
       id: 3,
@@ -187,7 +183,7 @@ const HomePage = () => {
     },
     {
       id: 2,
-      content: 'I was about to buy a used car that seemed perfect, but the CarReport showed it had been in a major accident. Thank you!',
+      content: 'I was about to buy a used vehicle that seemed perfect, but the CarReport showed it had been in a major accident. Thank you!',
       author: 'Sarah M.',
       location: 'Austin, TX',
       rating: 5,
@@ -205,12 +201,12 @@ const HomePage = () => {
     {
       id: 1,
       question: 'How Can My CarReport Help Me?',
-      answer: 'CarReport provides comprehensive vehicle history information that can help you avoid buying a car with hidden problems like accidents, flood damage, or odometer rollbacks. Our reports give you the confidence to make an informed purchasing decision.'
+      answer: 'CarReport provides comprehensive vehicle history information that can help you avoid buying a vehicle with hidden problems like accidents, flood damage, or odometer rollbacks. Our reports give you the confidence to make an informed purchasing decision.'
     },
     {
       id: 2,
       question: 'What is CarReport?',
-      answer: 'CarReport is a vehicle history reporting service that compiles data from various sources including DMVs, insurance companies, and auto auctions to provide a complete history of a vehicle. We help buyers make informed decisions when purchasing used cars.'
+      answer: 'CarReport is a vehicle history reporting service that compiles data from various sources including DMVs, insurance companies, and auto auctions to provide a complete history of a vehicle. We help buyers make informed decisions when purchasing used vehicles.'
     },
     {
       id: 3,
@@ -348,16 +344,14 @@ const HomePage = () => {
 
             {/* CTA Buttons with neon green */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button 
-                onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-black bg-neon-green rounded-full hover:bg-green-500 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-neon-green/25"
-              >
-                Get Your Report Now
-                <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-neon-green border-2 border-neon-green rounded-full hover:bg-neon-green/10 transition-all duration-300 hover:scale-105">
-                How It Works
-              </button>
+              <Link to="/pricing">
+                <button 
+                  className="group inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-black bg-neon-green rounded-full hover:bg-neon-green/75 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-neon-green/25"
+                >
+                  Get Your Report Now
+                  <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Link>
             </div>
 
             {/* Stats */}
@@ -384,67 +378,6 @@ const HomePage = () => {
 
         {/* Bottom neon green line */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-neon-green to-transparent"></div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing-section" className="py-20 bg-linear-to-b from-black to-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="bg-linear-to-r from-neon-green to-accent-teal bg-clip-text text-transparent">
-                Choose Your Report
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400">
-              Select the perfect report that matches your needs and budget
-            </p>
-          </div>
-
-          {selectedPlan && (
-            <div className="max-w-2xl mx-auto mb-8 p-4 bg-neon-green/5 border border-neon-green/30 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">
-                    ✓ Selected: {selectedPlan.name} Report - ${selectedPlan.price}
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Continue below to enter your VIN
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">Ready to proceed?</span>
-                  <a 
-                    href="#pricing-cta"
-                    className="px-3 py-1 text-sm bg-neon-green text-black font-medium rounded hover:bg-green-500 transition-colors"
-                  >
-                    Enter VIN
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {pricingPlans.map((plan) => (
-              <PricingCard
-                key={plan.id}
-                plan={plan}
-                onClick={() => handlePlanSelect(plan)}
-                isSelected={selectedPlan?.id === plan.id}
-                />
-            ))}
-          </div>
-
-          {/* Guarantee with neon green */}
-          <div className="mt-16 text-center">
-            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-neon-green/10 border border-neon-green/30">
-              <Shield className="w-5 h-5 text-neon-green" />
-              <span className="text-neon-green font-medium">
-                All plans come with our 100% satisfaction guarantee
-              </span>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Services Section */}
@@ -488,7 +421,7 @@ const HomePage = () => {
               </span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              Join thousands of satisfied customers who made better car buying decisions
+              Join thousands of satisfied customers who made better vehicle buying decisions
             </p>
           </div>
 
@@ -515,373 +448,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* VIN Entry Section */}
-      <section className="py-20 bg-linear-to-br from-black via-gray-900 to-black" id="pricing-cta">
-        <div className="container mx-auto px-4">
-          {step === 'initial' && (
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neon-green/10 border border-neon-green/30 mb-6">
-                  <span className="text-neon-green font-semibold">STEP 2: ENTER VIN</span>
-                </div>
-                
-                <h2 className="text-5xl font-bold mb-4">
-                  <span className="text-white">Get Your </span>
-                  <span className="text-neon-green">Vehicle Report</span>
-                </h2>
-                
-                {selectedPlan && (
-                  <div className="mb-6 p-4 rounded-xl bg-neon-green/5 border border-neon-green/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-400">Selected Plan</p>
-                        <p className="text-xl font-bold text-neon-green">
-                          {selectedPlan.name} Report - ${selectedPlan.price}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          localStorage.removeItem('selectedPlan');
-                          setSelectedPlan(null);
-                          window.location.href = '#pricing-section';
-                        }}
-                        className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
-                      >
-                        Change
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {showPlanWarning && (
-                  <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
-                      <div>
-                        <p className="text-yellow-500 font-medium">Please select a report plan first</p>
-                        <p className="text-yellow-400/80 text-sm mt-1">
-                          Choose a plan from the pricing section above before entering your VIN.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <h3 className="text-2xl font-semibold text-gray-300 mb-6">
-                  Enter your VIN for a free preview
-                </h3>
-
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-neon-green" />
-                    <span className="text-gray-300">Free preview with basic information</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-neon-green" />
-                    <span className="text-gray-300">Full report after secure payment</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-neon-green" />
-                    <span className="text-gray-300">Report sent to your email instantly</span>
-                  </div>
-                </div>
-
-                <div className="mb-8">
-                  <p className="text-gray-400 mb-3">Accepted Payment Methods:</p>
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/50">
-                      <CreditCard className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-300">Credit/Debit</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/50">
-                      <span className="text-gray-300">PayPal</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-8 rounded-2xl bg-linear-to-br from-gray-900 to-black border border-gray-800 shadow-2xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 rounded-lg bg-neon-green/10">
-                    <Car className="w-6 h-6 text-neon-green" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Enter Your VIN</h3>
-                    <p className="text-gray-400 text-sm">Get a free preview instantly</p>
-                  </div>
-                </div>
-
-                <form onSubmit={vinForm.handleSubmit(handleGetPreview)} className="space-y-6">
-                  <div>
-                    <label htmlFor="vin" className="block text-sm font-medium text-gray-400 mb-2">
-                      17-digit Vehicle Identification Number
-                    </label>
-                    <input
-                      type="text"
-                      id="vin"
-                      {...vinForm.register('vin', {
-                        required: true,
-                        minLength: 17,
-                        maxLength: 17
-                      })}
-                      placeholder="1HGCM82633A123456"
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green"
-                      maxLength={17}
-                      onChange={(e) => vinForm.setValue('vin', e.target.value.toUpperCase())}
-                    />
-                    <p className="mt-2 text-xs text-gray-500">
-                      Found on dashboard or registration documents
-                    </p>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isProcessing || vinForm.watch('vin')?.length !== 17}
-                    className="w-full py-3 px-4 bg-neon-green text-black font-semibold rounded-lg hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating Preview...
-                      </>
-                    ) : (
-                      'Get Free Preview'
-                    )}
-                  </button>
-                </form>
-
-                {paymentError && (
-                  <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-red-400 text-sm">{paymentError}</p>
-                  </div>
-                )}
-
-                <div className="mt-6 pt-6 border-t border-gray-800">
-                  <p className="text-gray-500 text-sm text-center">
-                    Preview is free. You'll only pay for the full report after seeing what's available.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 'preview' && previewData && (
-            <div>
-              <div className="mb-8">
-                <button
-                  onClick={() => {
-                    setStep('initial');
-                    setPreviewData(null);
-                  }}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-                >
-                  ← Back to VIN entry
-                </button>
-              </div>
-              
-              <div className="mb-6 p-4 rounded-xl bg-neon-green/5 border border-neon-green/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Selected Plan</p>
-                    <p className="text-xl font-bold text-neon-green">
-                      {selectedPlan?.name} Report - ${selectedPlan?.price}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem('selectedPlan');
-                      setSelectedPlan(null);
-                      setStep('initial');
-                    }}
-                    className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    Change Plan
-                  </button>
-                </div>
-              </div>
-              
-              {/* Preview Content */}
-              <div className="bg-gray-900 rounded-2xl p-8 mb-6">
-                <h3 className="text-2xl font-bold text-white mb-6">Preview Report</h3>
-                
-                <div className="grid md:grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-300 mb-4">Vehicle Information</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Make/Model:</span>
-                        <span className="text-white">{previewData.vehicleInfo.make} {previewData.vehicleInfo.model}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Year:</span>
-                        <span className="text-white">{previewData.vehicleInfo.year}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">VIN:</span>
-                        <span className="text-white font-mono">{previewData.vehicleInfo.vin}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-300 mb-4">Report Highlights</h4>
-                    <div className="space-y-3">
-                      {previewData.highlights.map((highlight: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-gray-400">{highlight.label}:</span>
-                          <span className={`${
-                            highlight.status === 'positive' ? 'text-neon-green' :
-                            highlight.status === 'negative' ? 'text-red-400' :
-                            'text-yellow-400'
-                          } font-semibold`}>
-                            {highlight.value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="text-center">
-                  <button
-                    onClick={handleContinueToCheckout}
-                    className="px-8 py-3 bg-neon-green text-black font-semibold rounded-lg hover:bg-green-500 transition-colors"
-                  >
-                    Continue to Checkout - ${selectedPlan?.price}
-                  </button>
-                  <p className="text-gray-400 text-sm mt-3">
-                    You'll get access to the full {selectedPlan?.name.toLowerCase()} report after payment
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 'checkout' && (
-            <div className="max-w-2xl mx-auto">
-              <div className="mb-8">
-                <button
-                  onClick={() => setStep('preview')}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-                >
-                  ← Back to preview
-                </button>
-              </div>
-              
-              <div className="bg-gray-900 rounded-2xl p-8">
-                <h3 className="text-2xl font-bold text-white mb-6">Checkout</h3>
-                
-                <form onSubmit={checkoutForm.handleSubmit(handlePayment)} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">Name</label>
-                      <input
-                        type="text"
-                        {...checkoutForm.register('name', { required: true })}
-                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-neon-green"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
-                      <input
-                        type="email"
-                        {...checkoutForm.register('email', { required: true })}
-                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-neon-green"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Card Number</label>
-                    <input
-                      type="text"
-                      {...checkoutForm.register('cardNumber', { required: true })}
-                      placeholder="1234 5678 9012 3456"
-                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-neon-green"
-                    />
-                  </div>
-                  
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">Expiry Date</label>
-                      <input
-                        type="text"
-                        {...checkoutForm.register('cardExpiry', { required: true })}
-                        placeholder="MM/YY"
-                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-neon-green"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">CVC</label>
-                      <input
-                        type="text"
-                        {...checkoutForm.register('cardCvc', { required: true })}
-                        placeholder="123"
-                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-neon-green"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">Amount</label>
-                      <div className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                        ${selectedPlan?.price}.00
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full py-3 bg-neon-green text-black font-semibold rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing Payment...
-                      </>
-                    ) : (
-                      `Pay $${selectedPlan?.price}.00`
-                    )}
-                  </button>
-                </form>
-                
-                {paymentError && (
-                  <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-red-400 text-sm">{paymentError}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step === 'success' && (
-            <div className="max-w-2xl mx-auto text-center">
-              <div className="mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-neon-green/10 rounded-full mb-4">
-                  <Check className="w-8 h-8 text-neon-green" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Payment Successful!</h3>
-                <p className="text-gray-400">
-                  Your {selectedPlan?.name.toLowerCase()} report has been generated and sent to your email.
-                </p>
-              </div>
-              
-              <button
-                onClick={() => {
-                  setStep('initial');
-                  vinForm.reset();
-                  checkoutForm.reset();
-                }}
-                className="px-6 py-3 bg-neon-green text-black font-semibold rounded-lg hover:bg-green-500 transition-colors"
-              >
-                Generate Another Report
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* FAQ Section */}
-      <section className="py-20 bg-black">
+      <section className=" pb-10 bg-black">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neon-green/10 border border-neon-green/30 mb-6">

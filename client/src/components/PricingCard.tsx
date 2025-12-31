@@ -64,12 +64,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ plan, onClick, isSelected = f
             <span className="text-gray-300">{feature.title}</span>
           </li>
         ))}
-        <li className="flex items-start">
-          <Check className="w-5 h-5 text-neon-green mr-3 shrink-0 mt-0.5" />
-          <span className="text-gray-300">
-            {plan.moneyBackDays}-Day Money Back Guarantee
-          </span>
-        </li>
       </ul>
 
       {/* CTA Button */}

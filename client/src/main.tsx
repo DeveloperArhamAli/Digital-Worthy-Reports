@@ -6,6 +6,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import HomePage from './pages/HomePage.tsx'
 import AboutPage from './pages/AboutPage.tsx'
 import ContactUsPage from './pages/ContactUsPage.tsx'
+import PricingPage from './pages/PricingPage.tsx'
+import PaymentSuccess from './pages/PaymentSuccess.tsx'
+import PaymentCancel from './pages/PaymentCancel.tsx'
 
 const router = createBrowserRouter([
   {
@@ -21,8 +24,20 @@ const router = createBrowserRouter([
         element: <AboutPage />
       },
       {
+        path: "/pricing",
+        element: <PricingPage />
+      },
+      {
         path: "/contact",
         element: <ContactUsPage />
+      },
+      {
+        path: "/payment-success",
+        element: <PaymentSuccess />
+      },
+      {
+        path: "/payment-cancel",
+        element: <PaymentCancel />
       }
     ]
   }

@@ -20,7 +20,7 @@ class Database {
   public async connect(): Promise<void> {
     try {
       await mongoose.connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 50000,
         socketTimeoutMS: 45000,
       });
       

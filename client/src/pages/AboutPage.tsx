@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   ShieldCheck, 
   Clock, 
   FileText, 
-  CreditCard,
   CheckCircle,
   XCircle,
   HelpCircle,
-  Mail,
-  Phone,
-  MapPin,
   ChevronRight,
-  Loader2
+  Loader2,
+  Globe,
+  Database,
+  Shield,
+  Users
 } from 'lucide-react';
 
 interface FAQ {
@@ -82,23 +82,19 @@ const AboutPage = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-400/10 border border-green-400/30 mb-6">
               <ShieldCheck className="w-4 h-4 text-green-400" />
               <span className="text-sm font-medium text-green-400">
-                100% Satisfaction Guarantee
+                Trusted Vehicle History Reports
               </span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               <span className="bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Our Refund Policy
-              </span>
-              <br />
-              <span className="bg-linear-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
-                & Process
+                About Digital Worthy Reports
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-              We stand behind our vehicle history reports. If you're not satisfied, 
-              we offer a straightforward refund process to ensure your peace of mind.
+              Comprehensive vehicle history reports powered by trusted data sources 
+              across North America.
             </p>
           </div>
         </div>
@@ -106,10 +102,161 @@ const AboutPage = () => {
         <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-green-400 to-transparent"></div>
       </section>
 
-      {/* Money-Back Guarantee Section */}
+      {/* About Digital Worthy Reports Section */}
+      <section className="py-20 bg-black">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-linear-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+                  Our Data Sources & Coverage
+                </span>
+              </h2>
+              <p className="text-gray-400 max-w-3xl mx-auto">
+                Digital Worthy Reports incorporates data from a wide range of local and international sources, 
+                focusing primarily on the United States and Canada.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-12 mb-20">
+              <div>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 rounded-xl bg-green-400/10">
+                    <Globe className="w-8 h-8 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">North American Coverage</h3>
+                    <p className="text-gray-400">United States & Canada</p>
+                  </div>
+                </div>
+
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Our database includes comprehensive data from service centers, vehicle inspection facilities, 
+                  government agencies, databases of stolen vehicles, salvage yards, and more within these regions.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                    <span className="text-gray-300">DMV and government agency records</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                    <span className="text-gray-300">Insurance company databases</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                    <span className="text-gray-300">Service and repair center records</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                    <span className="text-gray-300">Auto auction and salvage yard data</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                    <span className="text-gray-300">Stolen vehicle databases</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 rounded-xl bg-blue-500/10">
+                      <Database className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-white">24/7 Access</h4>
+                      <p className="text-gray-400">Always available when you need us</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-300">
+                    Digital Worthy Reports is accessible online 24/7. We are dedicated to ensuring our clients' 
+                    satisfaction every day through reliable and comprehensive vehicle data.
+                  </p>
+                </div>
+
+                <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 rounded-xl bg-purple-500/10">
+                      <Shield className="w-8 h-8 text-purple-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-white">Data Accuracy</h4>
+                      <p className="text-gray-400">Trusted by thousands of customers</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-300">
+                    We continuously update our databases and verify information from multiple sources 
+                    to provide the most accurate vehicle history reports available.
+                  </p>
+                </div>
+
+                <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 rounded-xl bg-amber-500/10">
+                      <Users className="w-8 h-8 text-amber-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-white">Customer Support</h4>
+                      <p className="text-gray-400">Here to help you understand your report</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-300">
+                    Our dedicated support team is available to help you interpret your vehicle history 
+                    report and answer any questions you may have about the data.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Section */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
+              <div className="text-center p-6 rounded-xl bg-gray-900/50 border border-gray-800">
+                <div className="text-3xl font-bold text-green-400 mb-2">50K+</div>
+                <div className="text-gray-400">Reports Generated</div>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-gray-900/50 border border-gray-800">
+                <div className="text-3xl font-bold text-green-400 mb-2">99.8%</div>
+                <div className="text-gray-400">Accuracy Rate</div>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-gray-900/50 border border-gray-800">
+                <div className="text-3xl font-bold text-green-400 mb-2">24/7</div>
+                <div className="text-gray-400">Service Availability</div>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-gray-900/50 border border-gray-800">
+                <div className="text-3xl font-bold text-green-400 mb-2">2</div>
+                <div className="text-gray-400">Countries Covered</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Refund Policy Section */}
       <section className="py-20 bg-linear-to-b from-black to-gray-900">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-400/10 border border-green-400/30 mb-6">
+                <ShieldCheck className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-medium text-green-400">
+                  100% Satisfaction Guarantee
+                </span>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-linear-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+                  Our Refund Policy & Process
+                </span>
+              </h2>
+
+              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+                We stand behind our vehicle history reports. If you're not satisfied, 
+                we offer a straightforward refund process to ensure your peace of mind.
+              </p>
+            </div>
+
             <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">
@@ -280,7 +427,7 @@ const AboutPage = () => {
                   </div>
                   <h4 className="text-white font-semibold mb-2">Contact Support</h4>
                   <p className="text-gray-400 text-sm">
-                    Email support@carreport.com or use the contact form below
+                    Email support@digitalworthy.com or use the contact form below
                   </p>
                 </div>
                 

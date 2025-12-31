@@ -23,6 +23,59 @@ class EmailService {
     });
   }
 
+  async sendOrderConfirmation(
+    to: string,
+    customerName: string,
+    transactionId: string,
+    plan: string,
+    vin: string,
+    paymentLink: string
+  ): Promise<boolean> {
+    const subject = 'Order Confirmation - Complete Your Payment';
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #1a1a1a; color: #39ff14; padding: 20px; text-align: center; }
+          .content { background: #f4f4f4; padding: 30px; }
+          .button { background: #39ff14; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+          .footer { background: #333; color: #fff; padding: 20px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Order Confirmation</h1>
+          </div>
+          <div class="content">
+            <h2>Hello ${customerName},</h2>
+            <p>Your order for a ${plan} vehicle history report has been created.</p>
+            <p><strong>Order ID:</strong> ${transactionId}</p>
+            <p><strong>Plan:</strong> ${plan}</p>
+            <p><strong>VIN:</strong> ${vin}</p>
+            <p><strong>Amount:</strong> $${plan === 'basic' ? '50' : plan === 'silver' ? '80' : '100'}</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${paymentLink}" class="button">Complete Payment Now</a>
+            </div>
+            
+            <p><strong>Important:</strong> Your payment link will expire in 30 minutes.</p>
+            <p>After payment, your report will be generated and sent to this email.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} DigitalWorthyReports. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({ to, subject, html });
+  }
+
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       const mailOptions = {

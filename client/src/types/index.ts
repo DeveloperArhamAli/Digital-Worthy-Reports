@@ -8,7 +8,6 @@ export interface PricingPlan {
     provided: boolean;
   }[];
   isPopular: boolean;
-  moneyBackDays: number;
 }
 
 export interface Testimonial {
