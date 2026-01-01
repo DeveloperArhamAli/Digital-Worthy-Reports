@@ -1,234 +1,182 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
 
-interface EmailOptions {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
-}
-
 class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_PORT === '465',
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
   }
 
   async sendOrderConfirmation(
     to: string,
-    customerName: string,
-    transactionId: string,
+    name: string,
+    orderId: string,
     plan: string,
     vin: string,
-    paymentLink: string
-  ): Promise<boolean> {
-    const subject = 'Order Confirmation - Complete Your Payment';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #1a1a1a; color: #39ff14; padding: 20px; text-align: center; }
-          .content { background: #f4f4f4; padding: 30px; }
-          .button { background: #39ff14; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }
-          .footer { background: #333; color: #fff; padding: 20px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
+    paymentUrl: string
+  ): Promise<void> {
+    try {
+      const subject = `Order Confirmation - Vehicle History Report #${orderId}`;
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #10B981; color: white; padding: 20px; text-align: center;">
             <h1>Order Confirmation</h1>
+            <p>Vehicle History Report</p>
           </div>
-          <div class="content">
-            <h2>Hello ${customerName},</h2>
-            <p>Your order for a ${plan} vehicle history report has been created.</p>
-            <p><strong>Order ID:</strong> ${transactionId}</p>
-            <p><strong>Plan:</strong> ${plan}</p>
-            <p><strong>VIN:</strong> ${vin}</p>
-            <p><strong>Amount:</strong> $${plan === 'basic' ? '50' : plan === 'silver' ? '80' : '100'}</p>
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Hi ${name},</h2>
+            <p>Thank you for your order! Your vehicle history report request has been received.</p>
             
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${paymentLink}" class="button">Complete Payment Now</a>
+            <div style="background-color: white; padding: 20px; border-left: 4px solid #10B981; margin: 20px 0;">
+              <h3>Order Details</h3>
+              <p><strong>Order ID:</strong> ${orderId}</p>
+              <p><strong>Package:</strong> ${plan.toUpperCase()}</p>
+              <p><strong>VIN:</strong> ${vin.toUpperCase()}</p>
+              <p><strong>Status:</strong> Awaiting Payment</p>
             </div>
             
-            <p><strong>Important:</strong> Your payment link will expire in 30 minutes.</p>
-            <p>After payment, your report will be generated and sent to this email.</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} DigitalWorthyReports. All rights reserved.</p>
+            <p>To complete your purchase and generate your report, please click the button below:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${paymentUrl}" style="display: inline-block; padding: 12px 24px; background-color: #10B981; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Complete Payment Now
+              </a>
+            </div>
+            
+            <p>Best regards,<br>The Digital Worthy Reports Team</p>
           </div>
         </div>
-      </body>
-      </html>
-    `;
+      `;
 
-    return this.sendEmail({ to, subject, html });
-  }
+      await this.transporter.sendMail({
+        from: `"Digital Worthy Reports" <${process.env.SMTP_FROM}>`,
+        to,
+        subject,
+        html,
+      });
 
-  async sendEmail(options: EmailOptions): Promise<boolean> {
-    try {
-      const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-      logger.info(`Email sent to ${options.to}: ${info.messageId}`);
-      return true;
+      logger.info(`Order confirmation sent to ${to}`);
     } catch (error) {
-      logger.error('Error sending email:', error);
-      return false;
+      logger.error('Error sending order confirmation:', error);
     }
   }
 
   async sendPaymentConfirmation(
     to: string,
-    customerName: string,
+    name: string,
     transactionId: string,
     amount: number,
     reportType: string,
     vin: string
-  ): Promise<boolean> {
-    const subject = 'Payment Confirmation - Digital Worthy Reports';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #1a1a1a; color: #39ff14; padding: 20px; text-align: center; }
-          .content { background: #f4f4f4; padding: 30px; }
-          .button { background: #39ff14; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; }
-          .footer { background: #333; color: #fff; padding: 20px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
+  ): Promise<void> {
+    try {
+      const subject = `Payment Confirmed - Report #${transactionId}`;
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #10B981; color: white; padding: 20px; text-align: center;">
             <h1>Payment Confirmed!</h1>
           </div>
-          <div class="content">
-            <h2>Hello ${customerName},</h2>
-            <p>Your payment has been successfully processed.</p>
-            <p><strong>Transaction ID:</strong> ${transactionId}</p>
-            <p><strong>Amount:</strong> $${amount}</p>
-            <p><strong>Report Type:</strong> ${reportType}</p>
-            <p><strong>VIN:</strong> ${vin}</p>
-            <p>Your vehicle history report is being generated and will be sent to you shortly.</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL}/dashboard" class="button">View Your Reports</a>
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <div style="background-color: #D1FAE5; padding: 15px; border-left: 4px solid #10B981; margin: 20px 0;">
+              <h3 style="margin: 0; color: #065F46;">✓ Payment Successful</h3>
             </div>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} DigitalWorthyReports. All rights reserved.</p>
+            
+            <h2>Hi ${name},</h2>
+            <p>Thank you for your payment! We're now generating your vehicle history report.</p>
+            
+            <div style="background-color: white; padding: 20px; border-left: 4px solid #10B981; margin: 20px 0;">
+              <h3>Payment Details</h3>
+              <p><strong>Transaction ID:</strong> ${transactionId}</p>
+              <p><strong>Amount:</strong> $${amount}</p>
+              <p><strong>Package:</strong> ${reportType.toUpperCase()}</p>
+              <p><strong>VIN:</strong> ${vin.toUpperCase()}</p>
+            </div>
+            
+            <p>Your report will be sent to this email address within minutes.</p>
+            
+            <p>Best regards,<br>The Digital Worthy Reports Team</p>
           </div>
         </div>
-      </body>
-      </html>
-    `;
+      `;
 
-    return this.sendEmail({ to, subject, html });
+      await this.transporter.sendMail({
+        from: `"Digital Worthy Reports" <${process.env.SMTP_FROM}>`,
+        to,
+        subject,
+        html,
+      });
+
+      logger.info(`Payment confirmation sent to ${to}`);
+    } catch (error) {
+      logger.error('Error sending payment confirmation:', error);
+    }
   }
 
   async sendReportReady(
     to: string,
-    customerName: string,
+    name: string,
     reportUrl: string,
     vin: string,
     reportType: string
-  ): Promise<boolean> {
-    const subject = 'Your Vehicle History Report is Ready';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #1a1a1a; color: #39ff14; padding: 20px; text-align: center; }
-          .content { background: #f4f4f4; padding: 30px; }
-          .button { background: #39ff14; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; }
-          .footer { background: #333; color: #fff; padding: 20px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
+  ): Promise<void> {
+    try {
+      const subject = `Your Vehicle History Report is Ready!`;
+      const reportId = reportUrl.split('/').pop()?.replace('.pdf', '') || 'N/A';
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #10B981; color: white; padding: 20px; text-align: center;">
             <h1>Your Report is Ready!</h1>
+            <p>Vehicle History Report #${reportId}</p>
           </div>
-          <div class="content">
-            <h2>Hello ${customerName},</h2>
-            <p>Your ${reportType} vehicle history report for VIN <strong>${vin}</strong> is now available.</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${reportUrl}" class="button">Download Your Report</a>
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Hi ${name},</h2>
+            <p>Your comprehensive vehicle history report has been generated and is ready for download.</p>
+            
+            <div style="background-color: white; padding: 20px; border-left: 4px solid #10B981; margin: 20px 0;">
+              <h3>Report Details</h3>
+              <p><strong>Report ID:</strong> ${reportId}</p>
+              <p><strong>VIN:</strong> ${vin.toUpperCase()}</p>
+              <p><strong>Package:</strong> ${reportType.toUpperCase()}</p>
+              <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+              <p><strong>Expires:</strong> ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
             </div>
-            <p>The report will be available for download for 30 days.</p>
-            <p>If you have any questions, please contact our support team.</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} DigitalWorthyReports. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    return this.sendEmail({ to, subject, html });
-  }
-
-  async sendProcessingNotification(
-    to: string,
-    customerName: string,
-    vin: string
-  ): Promise<boolean> {
-    const subject = 'Your Report is Being Generated';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #1a1a1a; color: #39ff14; padding: 20px; text-align: center; }
-          .content { background: #f4f4f4; padding: 30px; }
-          .footer { background: #333; color: #fff; padding: 20px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Processing Your Request</h1>
-          </div>
-          <div class="content">
-            <h2>Hello ${customerName},</h2>
-            <p>We're currently generating your vehicle history report for VIN <strong>${vin}</strong>.</p>
-            <p>This process usually takes 2-3 minutes. You'll receive another email with your report download link once it's ready.</p>
-            <p>Thank you for your patience!</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} DigitalWorthyReports. All rights reserved.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${reportUrl}" style="display: inline-block; padding: 12px 24px; background-color: #10B981; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Download Your Report
+              </a>
+            </div>
+            
+            <p>This report will be available for 30 days. Please download and save a copy for your records.</p>
+            
+            <p>Best regards,<br>The Digital Worthy Reports Team</p>
           </div>
         </div>
-      </body>
-      </html>
-    `;
+      `;
 
-    return this.sendEmail({ to, subject, html });
+      await this.transporter.sendMail({
+        from: `"Digital Worthy Reports" <${process.env.SMTP_FROM}>`,
+        to,
+        subject,
+        html,
+      });
+
+      logger.info(`Report ready email sent to ${to}`);
+    } catch (error) {
+      logger.error('Error sending report ready email:', error);
+    }
   }
 }
 

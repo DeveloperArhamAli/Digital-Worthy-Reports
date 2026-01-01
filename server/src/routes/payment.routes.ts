@@ -1,42 +1,89 @@
-import { Router } from 'express';
+import express from 'express';
 import PaymentController from '../controllers/payment.controller';
 import ReportController from '../controllers/report.controller';
-import StripeLinkController from '../controllers/stripeLink.controller';
-import express from 'express';
+import { body, param } from 'express-validator';
 
-const router = Router();
+const router = express.Router();
 
-// Middleware for webhooks
-const stripeWebhookMiddleware = express.raw({ type: 'application/json' });
-const paypalWebhookMiddleware = express.json();
+// Create order
+router.post(
+  '/create-order',
+  [
+    body('plan').isIn(['basic', 'silver', 'gold']).withMessage('Invalid plan type'),
+    body('vin').isLength({ min: 17, max: 17 }).withMessage('VIN must be 17 characters'),
+    body('customer.name').notEmpty().withMessage('Customer name is required'),
+    body('customer.email').isEmail().withMessage('Valid email is required'),
+    body('customer.phone').optional().isString()
+  ],
+  PaymentController.createOrder
+);
 
-// Payment routes
-router.post('/create-payment-intent', PaymentController.createPaymentIntent);
-router.post('/create-paypal-order', PaymentController.createPayPalOrder);
-router.post('/capture-paypal-order', PaymentController.capturePayPalOrder);
-router.post('/process-payment-success', PaymentController.processPaymentSuccess);
-router.get('/payment/:transactionId', PaymentController.getPaymentStatus);
-router.get('/payments/:email', PaymentController.getCustomerPayments);
-router.post('/refund', PaymentController.refundPayment);
-router.get('/payment/verify/:paymentId', PaymentController.verifyPayment);
-router.get('/payment/details/:paymentId', PaymentController.getPaymentDetails);
+// Verify payment
+router.get(
+  '/verify-payment/:orderId',
+  [
+    param('orderId').isMongoId().withMessage('Invalid order ID')
+  ],
+  PaymentController.verifyPayment
+);
 
-// Stripe Link routes
-router.post('/create-order', StripeLinkController.createOrder);
-router.get('/verify-payment/:orderId', StripeLinkController.verifyPayment);
-router.post('/process-payment-success', StripeLinkController.processPaymentSuccess);
-router.get('/order-status/:orderId', StripeLinkController.getOrderStatus);
-router.post('/webhook-callback', StripeLinkController.webhookCallback);
+// Process payment success and generate report
+router.post(
+  '/process-payment',
+  [
+    body('orderId').isMongoId().withMessage('Invalid order ID')
+  ],
+  PaymentController.processPaymentSuccess
+);
+
+// Get order status
+router.get(
+  '/order-status/:orderId',
+  [
+    param('orderId').isMongoId().withMessage('Invalid order ID')
+  ],
+  PaymentController.getOrderStatus
+);
+
+// Get payment by transaction ID
+router.get(
+  '/payment/:transactionId',
+  [
+    param('transactionId').isString().notEmpty().withMessage('Transaction ID is required')
+  ],
+  PaymentController.getPaymentByTransaction
+);
+
+// Stripe webhook
+router.post(
+  '/webhook/stripe',
+  express.raw({ type: 'application/json' }),
+  PaymentController.handleStripeWebhook
+);
 
 // Report routes
-router.post('/generate-preview', ReportController.generatePreview);
-router.post('/generate-report', ReportController.generateFullReport);
-router.get('/report/:reportId', ReportController.getReport);
-router.get('/report/download/:reportId', ReportController.downloadReport);
-router.get('/report/transaction/:transactionId', ReportController.getReportByTransaction);
+router.get(
+  '/report/:reportId',
+  [
+    param('reportId').isMongoId().withMessage('Invalid report ID')
+  ],
+  ReportController.getReport
+);
 
-// Webhook routes
-router.post('/webhook/stripe', stripeWebhookMiddleware, PaymentController.handleStripeWebhook);
-router.post('/webhook/paypal', paypalWebhookMiddleware, PaymentController.handlePayPalWebhook);
+router.get(
+  '/report/download/:reportId',
+  [
+    param('reportId').isMongoId().withMessage('Invalid report ID')
+  ],
+  ReportController.downloadReport
+);
+
+router.get(
+  '/report/transaction/:transactionId',
+  [
+    param('transactionId').isString().notEmpty().withMessage('Transaction ID is required')
+  ],
+  ReportController.getReportByTransaction
+);
 
 export default router;

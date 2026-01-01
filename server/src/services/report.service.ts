@@ -20,42 +20,24 @@ interface VehicleInfo {
 }
 
 class ReportService {
-  async generateReportPreview(vin: string): Promise<any> {
-    try {
-      // Decode VIN
-      const vehicleInfo = await this.decodeVIN(vin);
-      
-      // Get basic info from NHTSA API
-      const nhtsaData = await this.fetchNHTSAData(vin);
-      
-      const preview = {
-        vin,
-        year: vehicleInfo.year || nhtsaData.Year,
-        make: vehicleInfo.make || nhtsaData.Make,
-        model: vehicleInfo.model || nhtsaData.Model,
-        vehicleType: nhtsaData.VehicleType,
-        manufacturer: nhtsaData.Manufacturer,
-        country: nhtsaData.PlantCountry,
-      };
-
-      return preview;
-    } catch (error) {
-      logger.error('Error generating report preview:', error);
-      throw error;
-    }
-  }
-
   async generateFullReport(payment: IPayment): Promise<IReport> {
     try {
+      // Check if report already exists for this payment
+      const existingReport = await Report.findOne({ paymentId: payment._id });
+      if (existingReport) {
+        logger.info(`Report already exists for payment: ${payment._id}`);
+        return existingReport;
+      }
+
       // Decode VIN
       const vehicleInfo = await this.decodeVIN(payment.vin);
       
-      // Fetch additional data based on report type
+      // Fetch report data
       const reportData = await this.fetchReportData(payment.vin, payment.reportType);
       
       // Generate verdict for Silver and Gold reports
       let verdict;
-      if (payment.reportType !== ReportType.Basic) {
+      if (payment.reportType !== ReportType.BASIC) {
         verdict = this.generateVerdict(reportData);
       }
 
@@ -72,6 +54,7 @@ class ReportService {
           reportType: payment.reportType,
           purchaseDate: payment.createdAt,
           customerName: payment.customerName,
+          amount: payment.amount,
         },
       });
 
@@ -95,6 +78,7 @@ class ReportService {
       await payment.updateOne({
         reportUrl: pdfUrl,
         reportGeneratedAt: new Date(),
+        status: PaymentStatus.COMPLETED
       });
 
       logger.info(`Full report generated for payment: ${payment.transactionId}`);
@@ -107,7 +91,6 @@ class ReportService {
 
   private async decodeVIN(vin: string): Promise<VehicleInfo> {
     try {
-      // Use NHTSA API for VIN decoding
       const response = await axios.get(
         `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`
       );
@@ -134,20 +117,8 @@ class ReportService {
     }
   }
 
-  private async fetchNHTSAData(vin: string): Promise<any> {
-    try {
-      const response = await axios.get(
-        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`
-      );
-      return response.data.Results[0] || {};
-    } catch (error) {
-      logger.warn(`Failed to fetch NHTSA data for VIN ${vin}:`, error);
-      return {};
-    }
-  }
-
   private async fetchReportData(vin: string, reportType: ReportType): Promise<Partial<IReport>> {
-    // Mock data - in production, integrate with Carfax, AutoCheck, etc.
+    // This is mock data - replace with actual data sources in production
     const mockData: Partial<IReport> = {
       vehicle: {
         year: 2020,
@@ -233,31 +204,26 @@ class ReportService {
     let score = 100;
     const reasons: string[] = [];
 
-    // Deduct points for accidents
     if (data.accidents && data.accidents.length > 0) {
       score -= data.accidents.length * 10;
       reasons.push(`${data.accidents.length} accident${data.accidents.length > 1 ? 's' : ''} reported`);
     }
 
-    // Deduct points for incomplete recalls
     if (data.recalls && data.recalls.some(r => r.status !== 'Completed')) {
       score -= 15;
       reasons.push('Open recalls pending');
     }
 
-    // Deduct points for salvage title
     if (data.title?.status === 'Salvage') {
       score -= 40;
       reasons.push('Salvage title');
     }
 
-    // Add points for good service history
     if (data.service?.records && data.service.records.length >= 3) {
       score += 10;
       reasons.push('Good service history');
     }
 
-    // Determine recommendation
     let recommendation: 'BUY' | 'AVOID' | 'CAUTION';
     if (score >= 80) {
       recommendation = 'BUY';
@@ -267,118 +233,153 @@ class ReportService {
       recommendation = 'AVOID';
     }
 
-    return {
-      score,
-      recommendation,
-      reasons,
-    };
+    return { score, recommendation, reasons };
   }
 
   private async generatePDF(reportData: any): Promise<string> {
     return new Promise((resolve, reject) => {
       try {
         const filename = `report-${uuidv4()}.pdf`;
-        const filePath = path.join(__dirname, '../../public/reports', filename);
+        const reportsDir = path.join(__dirname, '../../public/reports');
+        const filePath = path.join(reportsDir, filename);
         
         // Ensure directory exists
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
+        if (!fs.existsSync(reportsDir)) {
+          fs.mkdirSync(reportsDir, { recursive: true });
         }
 
-        const doc = new PDFDocument({ margin: 50 });
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
         const stream = fs.createWriteStream(filePath);
         
         doc.pipe(stream);
 
         // Header
-        doc.fontSize(24).text('VEHICLE HISTORY REPORT', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(18).text(`VIN: ${reportData.vehicle.vin}`, { align: 'center' });
-        doc.moveDown(2);
+        doc.fontSize(24)
+           .font('Helvetica-Bold')
+           .fillColor('#10B981')
+           .text('VEHICLE HISTORY REPORT', { align: 'center' });
+        
+        doc.moveDown(0.5);
+        doc.fontSize(12)
+           .font('Helvetica')
+           .fillColor('#333333')
+           .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
+           .text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
+        
+        doc.moveDown(1);
 
         // Vehicle Information
-        doc.fontSize(16).text('VEHICLE INFORMATION', { underline: true });
-        doc.moveDown();
-        doc.fontSize(12).text(`Year: ${reportData.vehicle.year}`);
-        doc.text(`Make: ${reportData.vehicle.make}`);
-        doc.text(`Model: ${reportData.vehicle.model}`);
+        doc.fontSize(16)
+           .font('Helvetica-Bold')
+           .fillColor('#000000')
+           .text('VEHICLE INFORMATION');
+        
+        doc.moveDown(0.5);
+        doc.fontSize(12)
+           .font('Helvetica')
+           .fillColor('#333333');
+        
+        doc.text(`VIN: ${reportData.vehicle.vin}`);
+        doc.text(`Year: ${reportData.vehicle.year || 'N/A'}`);
+        doc.text(`Make: ${reportData.vehicle.make || 'N/A'}`);
+        doc.text(`Model: ${reportData.vehicle.model || 'N/A'}`);
         doc.text(`Trim: ${reportData.vehicle.trim || 'N/A'}`);
-        doc.text(`Body Style: ${reportData.vehicle.bodyStyle || 'N/A'}`);
-        doc.text(`Engine: ${reportData.vehicle.engine || 'N/A'}`);
-        doc.moveDown();
+        doc.moveDown(1);
 
         // Title Information
-        doc.fontSize(16).text('TITLE INFORMATION', { underline: true });
-        doc.moveDown();
-        doc.fontSize(12).text(`Status: ${reportData.title.status}`);
-        doc.text(`State: ${reportData.title.state}`);
-        if (reportData.title.issueDate) {
-          doc.text(`Issue Date: ${new Date(reportData.title.issueDate).toLocaleDateString()}`);
+        if (reportData.title) {
+          doc.fontSize(16)
+             .font('Helvetica-Bold')
+             .text('TITLE HISTORY');
+          
+          doc.moveDown(0.5);
+          doc.fontSize(12)
+             .font('Helvetica')
+             .text(`Status: ${reportData.title.status}`);
+          
+          if (reportData.title.state) {
+            doc.text(`State: ${reportData.title.state}`);
+          }
+          doc.moveDown(1);
         }
-        doc.moveDown();
 
         // Accident History
         if (reportData.accidents && reportData.accidents.length > 0) {
-          doc.fontSize(16).text('ACCIDENT HISTORY', { underline: true });
-          doc.moveDown();
+          doc.fontSize(16)
+             .font('Helvetica-Bold')
+             .text('ACCIDENT HISTORY');
+          
+          doc.moveDown(0.5);
           reportData.accidents.forEach((accident: any, index: number) => {
-            doc.fontSize(12).text(`Accident ${index + 1}:`);
-            doc.text(`  Date: ${new Date(accident.date).toLocaleDateString()}`);
-            doc.text(`  Severity: ${accident.severity}`);
-            doc.text(`  Description: ${accident.description}`);
+            doc.fontSize(12)
+               .text(`Accident ${index + 1}: ${new Date(accident.date).toLocaleDateString()} - ${accident.severity}`);
+            doc.fontSize(10)
+               .text(`   ${accident.description}`);
             doc.moveDown(0.5);
           });
-          doc.moveDown();
+          doc.moveDown(1);
         }
 
         // Service Records
         if (reportData.service?.records && reportData.service.records.length > 0) {
-          doc.fontSize(16).text('SERVICE HISTORY', { underline: true });
-          doc.moveDown();
+          doc.addPage();
+          doc.fontSize(16)
+             .font('Helvetica-Bold')
+             .text('SERVICE HISTORY');
+          
+          doc.moveDown(0.5);
           reportData.service.records.forEach((service: any, index: number) => {
-            doc.fontSize(12).text(`Service ${index + 1}:`);
-            doc.text(`  Date: ${new Date(service.date).toLocaleDateString()}`);
-            doc.text(`  Type: ${service.type}`);
-            doc.text(`  Location: ${service.location}`);
+            doc.fontSize(12)
+               .text(`${new Date(service.date).toLocaleDateString()}: ${service.type}`);
+            doc.fontSize(10)
+               .text(`   Location: ${service.location}`);
             doc.moveDown(0.5);
           });
-          doc.moveDown();
+          doc.moveDown(1);
         }
 
-        // Market Value (for Silver/Gold reports)
-        if (reportData.market) {
-          doc.fontSize(16).text('MARKET ANALYSIS', { underline: true });
-          doc.moveDown();
-          doc.fontSize(12).text(`Estimated Value: $${reportData.market.value.toLocaleString()}`);
-          doc.text(`Value Range: $${reportData.market.range.low.toLocaleString()} - $${reportData.market.range.high.toLocaleString()}`);
-          doc.moveDown();
-        }
-
-        // Verdict (for Silver/Gold reports)
+        // Verdict
         if (reportData.verdict) {
-          doc.fontSize(16).text('FINAL VERDICT', { underline: true });
-          doc.moveDown();
-          doc.fontSize(14).text(`Score: ${reportData.verdict.score}/100`);
-          doc.text(`Recommendation: ${reportData.verdict.recommendation}`);
-          doc.moveDown();
-          doc.fontSize(12).text('Key Factors:');
+          doc.addPage();
+          doc.fontSize(18)
+             .font('Helvetica-Bold')
+             .fillColor('#10B981')
+             .text('FINAL ASSESSMENT', { align: 'center' });
+          
+          doc.moveDown(1);
+          doc.fontSize(36)
+             .fillColor(reportData.verdict.score >= 80 ? '#10B981' : 
+                       reportData.verdict.score >= 60 ? '#F59E0B' : '#EF4444')
+             .text(`${reportData.verdict.score}/100`, { align: 'center' });
+          
+          doc.moveDown(1);
+          doc.fontSize(20)
+             .fillColor('#000000')
+             .text(`Recommendation: ${reportData.verdict.recommendation}`, { align: 'center' });
+          
+          doc.moveDown(1);
+          doc.fontSize(14)
+             .text('Key Factors:');
+          
           reportData.verdict.reasons.forEach((reason: string) => {
-            doc.text(`  • ${reason}`);
+            doc.fontSize(12)
+               .text(`• ${reason}`);
           });
-          doc.moveDown();
         }
 
         // Footer
+        doc.addPage();
         doc.fontSize(10)
-          .text('Generated by DigitalWorthyReports.com', { align: 'center' })
-          .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
-          .text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'center' });
+           .fillColor('#666666')
+           .text('CONFIDENTIAL REPORT - FOR CUSTOMER USE ONLY', { align: 'center' })
+           .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
+           .text(`Valid until: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}`, { align: 'center' })
+           .text('© Digital Worthy Reports', { align: 'center' });
 
         doc.end();
 
         stream.on('finish', () => {
-          const publicUrl = `${process.env.API_URL}/reports/${filename}`;
+          const publicUrl = `${process.env.API_URL || 'http://localhost:3000'}/reports/${filename}`;
           resolve(publicUrl);
         });
 
@@ -393,7 +394,6 @@ class ReportService {
     try {
       const report = await Report.findById(reportId).populate('paymentId');
       if (report) {
-        // Increment download count
         report.downloadCount += 1;
         report.lastAccessed = new Date();
         await report.save();
@@ -405,26 +405,12 @@ class ReportService {
     }
   }
 
-  async getReportByPaymentId(paymentId: string): Promise<IReport | null> {
-    try {
-      return await Report.findOne({ paymentId }).populate('paymentId');
-    } catch (error) {
-      logger.error('Error getting report by payment ID:', error);
-      throw error;
-    }
-  }
-
   async validateReportAccess(reportId: string): Promise<boolean> {
     try {
       const report = await Report.findById(reportId);
       if (!report) return false;
       
-      // Check if report has expired
-      if (report.expiresAt < new Date()) {
-        return false;
-      }
-      
-      return true;
+      return report.expiresAt > new Date();
     } catch (error) {
       logger.error('Error validating report access:', error);
       return false;

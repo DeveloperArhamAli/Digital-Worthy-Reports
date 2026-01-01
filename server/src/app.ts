@@ -5,25 +5,17 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import dotenv from 'dotenv';
-
-// Database
-import Database from './config/database';
-
-// Routes
+import { connectDB } from './config/database';
 import paymentRoutes from './routes/payment.routes';
-
-// Utils
 import { logger } from './utils/logger';
-dotenv.config({ 
-  path: path.resolve(__dirname, '../../.env') 
-});
 
-// Initialize Express
+dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
-Database.connect();
+connectDB();
 
 // Security middleware
 app.use(helmet());
@@ -34,8 +26,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.',
 });
 app.use('/api/', limiter);
@@ -63,7 +55,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handling middleware
+// Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('Unhandled error:', err);
   res.status(500).json({
@@ -72,17 +64,22 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log("server started")
+const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV}`);
+  logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  await Database.disconnect();
-  process.exit(0);
-});
+const gracefulShutdown = async () => {
+  logger.info('Shutting down gracefully...');
+  server.close(async () => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 export default app;

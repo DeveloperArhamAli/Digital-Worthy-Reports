@@ -1,227 +1,187 @@
 import Stripe from 'stripe';
 import { v4 as uuidv4 } from 'uuid';
-import { Payment, IPayment, PaymentStatus, PaymentMethod, ReportType } from '../models/Payment.model';
-import { Customer } from '../models/Customer.model';
-import { TransactionLog } from '../models/TransactionLog.model';
-import PayPalService, { PayPalOrder, PayPalCapture } from './paypal.service';
+import { Payment, IPayment, PaymentStatus, ReportType } from '../models/Payment.model';
 import { logger } from '../utils/logger';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-});
-
-interface CreatePaymentInput {
-  customerId: string;
-  amount: number;
-  currency: string;
-  reportType: ReportType;
-  paymentMethod: PaymentMethod;
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
+interface CreateOrderParams {
+  plan: string;
   vin: string;
+  customer: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 class PaymentService {
-  async createPayment(input: CreatePaymentInput): Promise<IPayment> {
-    try {
-      // Find or create customer
-      let customer = await Customer.findOne({ email: input.customerEmail });
-      
-      if (!customer) {
-        customer = await Customer.create({
-          email: input.customerEmail,
-          name: input.customerName,
-          phone: input.customerPhone,
-        });
-      }
+  private stripe: Stripe;
 
-      const transactionId = `TX-${Date.now()}-${uuidv4().slice(0, 8)}`;
+  constructor() {
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2023-10-16',
+      typescript: true,
+    });
+  }
+
+  async createOrder(params: CreateOrderParams): Promise<{ orderId: string; stripeUrl: string; transactionId: string }> {
+    try {
+      const { plan, vin, customer } = params;
       
+      // Determine price and report type
+      const { price, reportType } = this.getPlanDetails(plan);
+      
+      // Create transaction ID
+      const transactionId = `TXN-${uuidv4().split('-')[0].toUpperCase()}`;
+      
+      // Create payment record
       const payment = await Payment.create({
-        customerId: customer._id,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerPhone: customer.phone,
+        vin: vin.toUpperCase(),
+        reportType,
+        amount: price,
+        currency: 'USD',
         transactionId,
-        amount: input.amount,
-        currency: input.currency,
-        reportType: input.reportType,
-        paymentMethod: input.paymentMethod,
-        customerName: input.customerName,
-        customerEmail: input.customerEmail,
-        customerPhone: input.customerPhone,
-        vin: input.vin.toUpperCase(),
         status: PaymentStatus.PENDING,
-        metadata: {},
-      });
-
-      await TransactionLog.create({
-        transactionId: payment.transactionId,
-        paymentId: payment._id,
-        status: PaymentStatus.PENDING,
-        action: 'payment_created',
-        data: { input },
-      });
-
-      logger.info(`Payment created: ${payment.transactionId}`);
-      return payment;
-    } catch (error) {
-      logger.error('Error creating payment:', error);
-      throw error;
-    }
-  }
-
-  async createStripePaymentIntent(paymentId: string): Promise<string> {
-    try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) throw new Error('Payment not found');
-
-      const amountInCents = Math.round(payment.amount * 100);
-      
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInCents,
-        currency: payment.currency.toLowerCase(),
         metadata: {
-          paymentId: payment._id.toString(),
-          transactionId: payment.transactionId,
-          vin: payment.vin,
-          reportType: payment.reportType,
-          customerEmail: payment.customerEmail,
-        },
-        description: `Vehicle History Report - ${payment.reportType}`,
-        shipping: {
-          name: payment.customerName,
-          address: {
-            line1: 'Digital Delivery',
-            city: 'Digital',
-            state: 'DC',
-            country: 'US',
-            postal_code: '12345',
-          },
-        },
-        receipt_email: payment.customerEmail,
+          plan,
+          vinLength: vin.length,
+          customerName: customer.name
+        }
       });
 
-      payment.stripePaymentIntentId = paymentIntent.id;
-      payment.metadata = {
-        ...payment.metadata,
-        stripeClientSecret: paymentIntent.client_secret,
-      };
-      
-      await payment.save();
+      // Create Stripe Checkout Session
+      const session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${plan.toUpperCase()} Vehicle History Report`,
+                description: `VIN: ${vin.toUpperCase()}`,
+              },
+              unit_amount: price * 100,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.FRONTEND_URL}/payment-success?orderId=${payment._id}`,
+        cancel_url: `${process.env.FRONTEND_URL}/payment-cancel?orderId=${payment._id}`,
+        customer_email: customer.email,
+        metadata: {
+          orderId: payment._id.toString(),
+          vin: vin.toUpperCase(),
+          plan,
+          transactionId
+        },
+      }, { apiKey: process.env.STRIPE_SECRET_KEY });
 
-      return paymentIntent.client_secret!;
+      console.log(session)
+
+      // Update payment with Stripe session ID
+      await Payment.findByIdAndUpdate(payment._id, {
+        stripeSessionId: session.id,
+        stripeUrl: session.url
+      });
+
+      logger.info(`Order created: ${payment._id}, Stripe Session: ${session.id}`);
+
+      return {
+        orderId: payment._id.toString(),
+        stripeUrl: session.url!,
+        transactionId
+      };
     } catch (error) {
-      logger.error('Error creating Stripe payment intent:', error);
+      logger.error('Error creating order:', error);
       throw error;
     }
   }
 
-  async createPayPalOrder(paymentId: string): Promise<PayPalOrder> {
+  async verifyPayment(orderId: string): Promise<{ 
+    status: PaymentStatus; 
+    verified: boolean; 
+    reportUrl?: string;
+    transactionId?: string;
+  }> {
     try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) throw new Error('Payment not found');
-
-      const order = await PayPalService.createOrder({
-        amount: payment.amount,
-        currency: payment.currency,
-        description: `Vehicle History Report - ${payment.reportType}`,
-        customId: payment._id.toString(),
-        invoiceId: payment.transactionId,
-        customerName: payment.customerName,
-        customerEmail: payment.customerEmail,
-        customerPhone: payment.customerPhone,
-        returnUrl: `${process.env.FRONTEND_URL}/payment-success?transactionId=${payment.transactionId}`,
-        cancelUrl: `${process.env.FRONTEND_URL}/payment-cancelled?transactionId=${payment.transactionId}`,
-      });
-
-      payment.paypalOrderId = order.id;
-      payment.metadata = {
-        ...payment.metadata,
-        paypalOrder: order,
-        approvalUrl: order.links.find(link => link.rel === 'approve')?.href,
-      };
-      await payment.save();
-
-      logger.info(`PayPal order created for payment ${payment.transactionId}: ${order.id}`);
-      return order;
-    } catch (error: any) {
-      logger.error('Error creating PayPal order:', error);
-      throw new Error(`Failed to create PayPal order: ${error.message}`);
-    }
-  }
-
-  async capturePayPalOrder(orderId: string): Promise<PayPalCapture> {
-    try {
-      const captureResult = await PayPalService.captureOrder(orderId);
-
-      const payment = await Payment.findOne({ paypalOrderId: orderId });
-      if (!payment) throw new Error('Payment not found');
-
-      // Get capture ID from the result
-      const captureId = captureResult.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      const payment = await Payment.findById(orderId);
       
-      if (!captureId) {
-        throw new Error('No capture ID found in PayPal response');
+      if (!payment) {
+        throw new Error('Payment not found');
       }
 
-      payment.paypalCaptureId = captureId;
-      payment.status = PaymentStatus.COMPLETED;
-      payment.reportAccessExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      payment.metadata = {
-        ...payment.metadata,
-        paypalCapture: captureResult,
-      };
-      await payment.save();
-
-      await TransactionLog.create({
-        transactionId: payment.transactionId,
-        paymentId: payment._id,
-        status: PaymentStatus.COMPLETED,
-        action: 'paypal_capture_completed',
-        data: { captureResult },
-      });
-
-      logger.info(`PayPal order captured for payment ${payment.transactionId}: ${captureId}`);
-      return captureResult;
-    } catch (error: any) {
-      logger.error('Error capturing PayPal order:', error);
-      throw new Error(`Failed to capture PayPal order: ${error.message}`);
-    }
-  }
-
-  async updatePaymentStatus(paymentId: string, status: PaymentStatus, metadata?: any): Promise<IPayment> {
-    try {
-      const updateData: any = { 
-        status,
-      };
-
-      if (metadata) {
-        updateData.$set = {
-          'metadata': metadata,
+      // If already successful and report generated, return immediately
+      if (payment.status === PaymentStatus.SUCCESS && payment.reportUrl) {
+        return {
+          status: PaymentStatus.SUCCESS,
+          verified: true,
+          reportUrl: payment.reportUrl,
+          transactionId: payment.transactionId
         };
       }
 
-      if (status === PaymentStatus.COMPLETED) {
-        updateData.reportAccessExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      // Check Stripe session status
+      if (payment.stripeSessionId) {
+        const session = await this.stripe.checkout.sessions.retrieve(payment.stripeSessionId);
+        
+        if (session.payment_status === 'paid') {
+          // Update payment status
+          await Payment.findByIdAndUpdate(orderId, {
+            status: PaymentStatus.SUCCESS,
+            paidAt: new Date(),
+            stripePaymentIntentId: session.payment_intent as string
+          });
+
+          return {
+            status: PaymentStatus.SUCCESS,
+            verified: true,
+            transactionId: payment.transactionId
+          };
+        } else if (session.status === 'expired') {
+          await Payment.findByIdAndUpdate(orderId, {
+            status: PaymentStatus.EXPIRED
+          });
+          
+          return {
+            status: PaymentStatus.EXPIRED,
+            verified: false
+          };
+        }
+      }
+
+      return {
+        status: payment.status,
+        verified: false
+      };
+    } catch (error) {
+      logger.error('Error verifying payment:', error);
+      throw error;
+    }
+  }
+
+  async updatePaymentStatus(orderId: string, status: PaymentStatus): Promise<IPayment> {
+    try {
+      const updateData: any = { status };
+      
+      if (status === PaymentStatus.SUCCESS) {
+        updateData.paidAt = new Date();
       }
 
       const payment = await Payment.findByIdAndUpdate(
-        paymentId,
+        orderId,
         updateData,
         { new: true }
       );
 
-      if (!payment) throw new Error('Payment not found');
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
 
-      await TransactionLog.create({
-        transactionId: payment.transactionId,
-        paymentId: payment._id,
-        status,
-        action: 'payment_status_updated',
-        data: { status, metadata },
-      });
+      logger.info(`Payment ${orderId} status updated to: ${status}`);
 
-      logger.info(`Payment ${payment.transactionId} status updated to ${status}`);
       return payment;
     } catch (error) {
       logger.error('Error updating payment status:', error);
@@ -229,29 +189,99 @@ class PaymentService {
     }
   }
 
-  async handleStripeWebhook(signature: string, payload: Buffer): Promise<void> {
+  async getPaymentById(orderId: string): Promise<IPayment | null> {
     try {
-      const event = stripe.webhooks.constructEvent(
-        payload,
-        signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
+      return await Payment.findById(orderId);
+    } catch (error) {
+      logger.error('Error getting payment by ID:', error);
+      throw error;
+    }
+  }
+
+  async getPaymentByTransactionId(transactionId: string): Promise<IPayment | null> {
+    try {
+      return await Payment.findOne({ transactionId });
+    } catch (error) {
+      logger.error('Error getting payment by transaction ID:', error);
+      throw error;
+    }
+  }
+
+  async getOrderStatus(orderId: string): Promise<{ 
+    status: PaymentStatus; 
+    reportUrl?: string;
+    message?: string;
+    transactionId?: string;
+  }> {
+    try {
+      const payment = await Payment.findById(orderId);
+      
+      if (!payment) {
+        return {
+          status: PaymentStatus.FAILED,
+          message: 'Order not found'
+        };
+      }
+
+      let statusMessage = '';
+      switch (payment.status) {
+        case PaymentStatus.PENDING:
+          statusMessage = 'Waiting for payment';
+          break;
+        case PaymentStatus.SUCCESS:
+          statusMessage = payment.reportUrl ? 'Report ready' : 'Payment successful, generating report';
+          break;
+        case PaymentStatus.FAILED:
+          statusMessage = 'Payment failed';
+          break;
+        case PaymentStatus.EXPIRED:
+          statusMessage = 'Payment expired';
+          break;
+        case PaymentStatus.COMPLETED:
+          statusMessage = 'Report generated and ready';
+          break;
+      }
+
+      return {
+        status: payment.status,
+        reportUrl: payment.reportUrl,
+        message: statusMessage,
+        transactionId: payment.transactionId
+      };
+    } catch (error) {
+      logger.error('Error getting order status:', error);
+      throw error;
+    }
+  }
+
+  async handleStripeWebhook(signature: string, payload: any): Promise<void> {
+    try {
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+      const event = this.stripe.webhooks.constructEvent(payload, signature, endpointSecret);
 
       switch (event.type) {
-        case 'payment_intent.succeeded':
-          await this.handleStripePaymentSuccess(event.data.object as Stripe.PaymentIntent);
+        case 'checkout.session.completed':
+          const session = event.data.object as Stripe.Checkout.Session;
+          const orderId = session.metadata?.orderId;
+          
+          if (orderId) {
+            logger.info(`Payment successful for order: ${orderId}`);
+            
+            // Update payment status
+            await this.updatePaymentStatus(orderId, PaymentStatus.SUCCESS);
+            
+            // The report will be generated by the frontend polling
+          }
           break;
-        
-        case 'payment_intent.payment_failed':
-          await this.handleStripePaymentFailure(event.data.object as Stripe.PaymentIntent);
+
+        case 'checkout.session.expired':
+          const expiredSession = event.data.object as Stripe.Checkout.Session;
+          const expiredOrderId = expiredSession.metadata?.orderId;
+          if (expiredOrderId) {
+            await this.updatePaymentStatus(expiredOrderId, PaymentStatus.EXPIRED);
+            logger.info(`Payment expired for order: ${expiredOrderId}`);
+          }
           break;
-        
-        case 'charge.refunded':
-          await this.handleStripeRefund(event.data.object as Stripe.Charge);
-          break;
-        
-        default:
-          logger.warn(`Unhandled Stripe event type: ${event.type}`);
       }
     } catch (error) {
       logger.error('Error handling Stripe webhook:', error);
@@ -259,220 +289,16 @@ class PaymentService {
     }
   }
 
-  async handlePayPalWebhook(headers: any, body: any): Promise<void> {
-    try {
-      // Verify webhook signature
-      const isValid = await PayPalService.verifyWebhookSignature(headers, body);
-      if (!isValid) {
-        throw new Error('Invalid PayPal webhook signature');
-      }
-
-      const eventType = body.event_type;
-      const resource = body.resource;
-
-      switch (eventType) {
-        case 'PAYMENT.CAPTURE.COMPLETED':
-          await this.handlePayPalCaptureCompleted(resource);
-          break;
-        
-        case 'PAYMENT.CAPTURE.DENIED':
-          await this.handlePayPalCaptureDenied(resource);
-          break;
-        
-        case 'PAYMENT.CAPTURE.REFUNDED':
-          await this.handlePayPalCaptureRefunded(resource);
-          break;
-        
-        default:
-          logger.warn(`Unhandled PayPal event type: ${eventType}`);
-      }
-    } catch (error) {
-      logger.error('Error handling PayPal webhook:', error);
-      throw error;
-    }
-  }
-
-  private async handleStripePaymentSuccess(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntent.id });
-    if (!payment) return;
-
-    await this.updatePaymentStatus(payment._id.toString(), PaymentStatus.COMPLETED, {
-      stripePaymentIntent: paymentIntent.id,
-      stripeChargeId: paymentIntent.latest_charge,
-    });
-  }
-
-  private async handleStripePaymentFailure(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntent.id });
-    if (!payment) return;
-
-    await this.updatePaymentStatus(payment._id.toString(), PaymentStatus.FAILED, {
-      stripePaymentIntent: paymentIntent.id,
-      error: paymentIntent.last_payment_error,
-    });
-  }
-
-  private async handleStripeRefund(charge: Stripe.Charge): Promise<void> {
-    const payment = await Payment.findOne({ stripePaymentIntentId: charge.payment_intent as string });
-    if (!payment) return;
-
-    await this.updatePaymentStatus(payment._id.toString(), PaymentStatus.REFUNDED, {
-      stripeChargeId: charge.id,
-      refunds: charge.refunds,
-    });
-  }
-
-  private async handlePayPalCaptureCompleted(resource: any): Promise<void> {
-    const captureId = resource.id;
-    const orderId = resource.supplementary_data?.related_ids?.order_id;
-    
-    let payment;
-    
-    if (orderId) {
-      payment = await Payment.findOne({ paypalOrderId: orderId });
-    }
-    
-    if (!payment && captureId) {
-      payment = await Payment.findOne({ paypalCaptureId: captureId });
-    }
-    
-    if (!payment) return;
-
-    await this.updatePaymentStatus(payment._id.toString(), PaymentStatus.COMPLETED, {
-      paypalCapture: resource,
-      webhookEvent: 'PAYMENT.CAPTURE.COMPLETED',
-    });
-  }
-
-  private async handlePayPalCaptureDenied(resource: any): Promise<void> {
-    const orderId = resource.supplementary_data?.related_ids?.order_id;
-    if (!orderId) return;
-
-    const payment = await Payment.findOne({ paypalOrderId: orderId });
-    if (!payment) return;
-
-    await this.updatePaymentStatus(payment._id.toString(), PaymentStatus.FAILED, {
-      paypalCapture: resource,
-      webhookEvent: 'PAYMENT.CAPTURE.DENIED',
-    });
-  }
-
-  private async handlePayPalCaptureRefunded(resource: any): Promise<void> {
-    const captureId = resource.id;
-    if (!captureId) return;
-
-    const payment = await Payment.findOne({ paypalCaptureId: captureId });
-    if (!payment) return;
-
-    await this.updatePaymentStatus(payment._id.toString(), PaymentStatus.REFUNDED, {
-      paypalRefund: resource,
-      webhookEvent: 'PAYMENT.CAPTURE.REFUNDED',
-    });
-  }
-
-  async getPaymentByTransactionId(transactionId: string): Promise<IPayment | null> {
-    try {
-      return await Payment.findOne({ transactionId }).populate('customerId');
-    } catch (error) {
-      logger.error('Error getting payment:', error);
-      throw error;
-    }
-  }
-
-  async getPaymentsByEmail(email: string): Promise<IPayment[]> {
-    try {
-      return await Payment.find({ customerEmail: email })
-        .sort({ createdAt: -1 })
-        .populate('customerId');
-    } catch (error) {
-      logger.error('Error getting payments by email:', error);
-      throw error;
-    }
-  }
-
-  async refundPayment(paymentId: string, reason?: string): Promise<void> {
-    try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) throw new Error('Payment not found');
-
-      if (payment.status !== PaymentStatus.COMPLETED) {
-        throw new Error('Only completed payments can be refunded');
-      }
-
-      if (payment.paymentMethod === PaymentMethod.STRIPE && payment.stripePaymentIntentId) {
-        const refund = await stripe.refunds.create({
-          payment_intent: payment.stripePaymentIntentId,
-          reason: 'requested_by_customer'
-        });
-
-        await this.updatePaymentStatus(paymentId, PaymentStatus.REFUNDED, {
-          stripeRefundId: refund.id,
-          refundReason: reason,
-        });
-      } else if (payment.paymentMethod === PaymentMethod.PAYPAL && payment.paypalCaptureId) {
-        // Refund PayPal capture
-        await PayPalService.refundCapture(payment.paypalCaptureId);
-
-        await this.updatePaymentStatus(paymentId, PaymentStatus.REFUNDED, {
-          refundReason: reason,
-          refundedAt: new Date(),
-        });
-      }
-    } catch (error) {
-      logger.error('Error refunding payment:', error);
-      throw error;
-    }
-  }
-
-  async validatePayment(paymentId: string): Promise<boolean> {
-    try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) return false;
-
-      // Check if payment is completed
-      if (payment.status !== PaymentStatus.COMPLETED) return false;
-
-      // Check if report access hasn't expired
-      if (payment.reportAccessExpiresAt && payment.reportAccessExpiresAt < new Date()) {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      logger.error('Error validating payment:', error);
-      return false;
-    }
-  }
-
-  async getPaymentStatus(paymentId: string): Promise<{
-    status: PaymentStatus;
-    transactionId: string;
-    amount: number;
-    currency: string;
-    reportType: ReportType;
-    vin: string;
-    reportUrl?: string;
-    createdAt: Date;
-    expiresAt?: Date;
-  }> {
-    try {
-      const payment = await Payment.findById(paymentId);
-      if (!payment) throw new Error('Payment not found');
-
-      return {
-        status: payment.status,
-        transactionId: payment.transactionId,
-        amount: payment.amount,
-        currency: payment.currency,
-        reportType: payment.reportType,
-        vin: payment.vin,
-        reportUrl: payment.reportUrl,
-        createdAt: payment.createdAt,
-        expiresAt: payment.reportAccessExpiresAt,
-      };
-    } catch (error) {
-      logger.error('Error getting payment status:', error);
-      throw error;
+  private getPlanDetails(plan: string): { price: number; reportType: ReportType } {
+    switch (plan.toLowerCase()) {
+      case 'basic':
+        return { price: 50, reportType: ReportType.BASIC };
+      case 'silver':
+        return { price: 80, reportType: ReportType.SILVER };
+      case 'gold':
+        return { price: 100, reportType: ReportType.GOLD };
+      default:
+        throw new Error(`Invalid plan: ${plan}`);
     }
   }
 }
