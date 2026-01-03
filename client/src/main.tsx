@@ -9,6 +9,7 @@ import ContactUsPage from './pages/ContactUsPage.tsx'
 import PricingPage from './pages/PricingPage.tsx'
 import PaymentSuccess from './pages/PaymentSuccess.tsx'
 import PaymentCancel from './pages/PaymentCancel.tsx'
+import AdminPage from './pages/AdminPage.tsx'
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
       {
         path: "/payment-cancel",
         element: <PaymentCancel />
+      },
+      {
+        path: "/admin",
+        element: <AdminPage />
       }
     ]
   }

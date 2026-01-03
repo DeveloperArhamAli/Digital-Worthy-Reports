@@ -8,6 +8,7 @@ import path from 'path';
 import { connectDB } from './config/database';
 import paymentRoutes from './routes/payment.routes';
 import configRoutes from './routes/config.routes';
+import adminRoutes from './routes/admin.routes';
 import { logger } from './utils/logger';
 import { NODE_ENV, PORT, FRONTEND_URL, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS } from '@utils/readDockerSecret';
 
@@ -38,6 +39,7 @@ app.use('/reports', express.static(path.join(__dirname, '../public/reports')));
 
 app.use('/api', paymentRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

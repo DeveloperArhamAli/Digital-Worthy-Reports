@@ -70,7 +70,7 @@ secrets:
   rate_limit_max_requests:
     file: ./server/config/secrets/rate_limit_max_requests.txt
   rate_limit_window_ms:
-    file: ./server/config/secrets/rate_limit_window_ms.txt
+    file: ./server/config/secrets/rate_limit_windows_ms.txt
   report_expiry_days:
     file: ./server/config/secrets/report_expiry_days.txt
   report_storage_path:
