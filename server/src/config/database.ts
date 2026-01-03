@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
+import { MONGODB_URI } from '@utils/readDockerSecret';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/car_reports_db';
+console.log('Using MongoDB URI:', MONGODB_URI);
 
 export const connectDB = async (): Promise<void> => {
   try {

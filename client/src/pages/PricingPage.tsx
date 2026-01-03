@@ -416,7 +416,7 @@ const PricingPage = () => {
       { key: 'complete', label: 'Complete', number: 5 }
     ];
 
-    const currentStepIndex = steps.findIndex(step => step.key === step);
+    const currentStepIndex = steps.findIndex(step => step.key);
 
     return (
       <div className="py-8 bg-gray-900/50">
@@ -452,8 +452,8 @@ const PricingPage = () => {
   return (
     <main className="bg-black text-white min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-gray-900 to-black overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-400/5 via-transparent to-green-400/5"></div>
+      <section className="relative bg-linear-to-b from-gray-900 to-black overflow-hidden">
+        <div className="absolute inset-0 bg-linear-to-r from-green-400/5 via-transparent to-green-400/5"></div>
         
         <div className="container mx-auto px-4 relative py-20 md:py-28">
           <div className="max-w-4xl mx-auto text-center">
@@ -465,11 +465,11 @@ const PricingPage = () => {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent">
                 Choose Your Report
               </span>
               <br />
-              <span className="bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
                 Package
               </span>
             </h1>
@@ -481,7 +481,7 @@ const PricingPage = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-400 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-green-400 to-transparent"></div>
       </section>
 
       {/* Step Indicator */}
@@ -489,11 +489,11 @@ const PricingPage = () => {
 
       {/* Step 1: Select Plan */}
       {step === 'select' && (
-        <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+        <section className="py-20 bg-linear-to-b from-black to-gray-900">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
                   Choose Your Report Package
                 </span>
               </h2>
@@ -526,7 +526,7 @@ const PricingPage = () => {
                     )}
 
                     <div className="text-center mb-8">
-                      <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${plan.color} mb-4`}>
+                      <div className={`inline-flex p-3 rounded-xl bg-linear-to-br ${plan.color} mb-4`}>
                         <Icon className="w-8 h-8 text-white" />
                       </div>
                       <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
@@ -758,7 +758,7 @@ const PricingPage = () => {
 
       {/* Step 3: Review & Pay */}
       {step === 'review' && selectedPlan && (
-        <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+        <section className="py-20 bg-linear-to-b from-black to-gray-900">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
               <div className="mb-8">
@@ -885,7 +885,7 @@ const PricingPage = () => {
 
       {/* Step 4: Processing Payment */}
       {step === 'processing' && (
-        <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+        <section className="py-20 bg-linear-to-b from-black to-gray-900">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
               <div className="bg-gray-900 rounded-2xl p-8 text-center">
@@ -974,7 +974,7 @@ const PricingPage = () => {
 
       {/* Step 5: Complete - Report Ready */}
       {step === 'complete' && orderStatus?.status === 'success' && (
-        <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+        <section className="py-20 bg-linear-to-b from-black to-gray-900">
           <div className="container mx-auto px-4">
             <div className="max-w-2xl mx-auto">
               <div className="bg-gray-900 rounded-2xl p-8 text-center">
@@ -1050,30 +1050,6 @@ const PricingPage = () => {
           </div>
         </section>
       )}
-
-      {/* Footer */}
-      <footer className="bg-black border-t border-gray-800 py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <p className="text-gray-400 text-sm">
-                © {new Date().getFullYear()} Digital Worthy Reports. All rights reserved.
-              </p>
-            </div>
-            <div className="flex gap-6">
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Terms of Service
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Contact Support
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 };

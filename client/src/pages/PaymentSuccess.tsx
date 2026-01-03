@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, Mail, Download, Home, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -8,7 +9,8 @@ const PaymentSuccess = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   
-  const orderId = searchParams.get('order_id');
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+  const orderId = searchParams.get('orderId');
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -22,24 +24,21 @@ const PaymentSuccess = () => {
         setLoading(true);
         
         // Verify payment with backend
-        const response = await fetch(`/api/verify-payment/${orderId}`);
-        const result = await response.json();
+        const result = await axios.get(`${backendUrl}/api/verify-payment/${orderId}`);
+        console.log("Verification result:", result.data.reportUrl);
         
-        if (result.success && result.verified) {
+        if (result.data.success && result.data.verified) {
           setOrderDetails({
-            transactionId: result.payment.transactionId,
-            plan: result.payment.reportType,
-            amount: result.payment.amount,
-            customerEmail: result.payment.customerEmail,
-            vin: result.payment.vin,
-            reportGenerated: !!result.payment.reportUrl,
-            reportUrl: result.payment.reportUrl,
+            transactionId: result.data.transactionId,
+            reportUrl: result.data.reportUrl,
           });
 
           // If report is generated, clear local storage
-          if (result.payment.reportUrl) {
+          if (result.data.payment?.reportUrl) {
             localStorage.removeItem('currentOrderId');
           }
+
+          window.close();
         } else {
           setError('Payment verification failed or payment is still pending');
         }
@@ -116,33 +115,6 @@ const PaymentSuccess = () => {
                     ? 'Your vehicle history report has been generated and sent to your email.'
                     : 'Your payment was successful. Your report is being generated and will be sent to your email shortly.'}
                 </p>
-
-                {orderDetails && (
-                  <div className="mb-8 p-6 rounded-xl bg-gray-800/50">
-                    <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Order ID:</span>
-                        <span className="text-white font-mono">{orderDetails.transactionId}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Report Type:</span>
-                        <span className="text-green-400">{orderDetails.plan}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Amount:</span>
-                        <span className="text-white">${orderDetails.amount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Vehicle VIN:</span>
-                        <span className="text-white font-mono">{orderDetails.vin}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Email:</span>
-                        <span className="text-white">{orderDetails.customerEmail}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-3 justify-center">

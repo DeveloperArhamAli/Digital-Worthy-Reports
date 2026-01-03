@@ -31,6 +31,7 @@ export interface IPayment extends Document {
   reportGeneratedAt?: Date;
   reportAccessExpiresAt?: Date;
   paidAt?: Date;
+  merchantTag: string;
   metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -112,6 +113,10 @@ const PaymentSchema = new Schema({
   },
   paidAt: {
     type: Date
+  },
+  merchantTag: {
+    type: String,
+    required: true,
   },
   metadata: {
     type: Schema.Types.Mixed,

@@ -134,6 +134,7 @@ class PaymentController {
         message: 'Report generated successfully'
       });
     } catch (error: any) {
+      console.error("Error processing payment:", error);
       logger.error('Error processing payment:', error);
       res.status(500).json({ 
         success: false,

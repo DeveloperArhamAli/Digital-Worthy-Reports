@@ -1,0 +1,30 @@
+declare module '@utils/readDockerSecret' {
+  export const API_URL: string;
+  export const BACKEND_URL: string;
+  export const COMPANY_NAME: string;
+  export const FRONTEND_URL: string;
+  export const JWT_SECRET: string;
+  export const NODE_ENV: string;
+  export const MONGODB_URI: string;
+  export const PORT: string;
+  export const RATE_LIMIT_MAX_REQUESTS: string;
+  export const RATE_LIMIT_WINDOW_MS: string;
+  export const REPORT_EXPIRY_DAYS: string;
+  export const REPORT_STORAGE_PATH: string;
+  export const SMTP_FROM_NAME: string;
+  export const SMTP_FROM: string;
+  export const SMTP_HOST: string;
+  export const SMTP_PASS: string;
+  export const SMTP_PORT: string;
+  export const SMTP_SECURE: string;
+  export const SMTP_USER: string;
+  export const STRIPE_SECRET_KEY: string;
+  export const STRIPE_WEBHOOK_SECRET: string;
+  export const VIN_API_KEY: string;
+  export const VIN_API_URL: string;
+
+  export const VITE_API_URL: string;
+  export const VITE_BACKEND_URL: string;
+  export const VITE_TAWKTO_PROPERTY_ID: string;
+  export const VITE_TAWKTO_WIDGET_NAME: string;
+}

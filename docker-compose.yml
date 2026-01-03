@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+  server:
+    build: ./server
+    container_name: express-server
+    ports:
+      - "5000:5000"
+    secrets:
+      - api_url
+      - backend_url
+      - company_name
+      - frontend_url
+      - jwt_secret
+      - mongodb_uri
+      - node_env
+      - port
+      - rate_limit_max_requests
+      - rate_limit_window_ms
+      - report_expiry_days
+      - report_storage_path
+      - smtp_from_name
+      - smtp_from
+      - smtp_host
+      - smtp_pass
+      - smtp_port
+      - smtp_secure
+      - smtp_user
+      - stripe_secret_key
+      - stripe_webhook_secret
+      - vin_api_key
+      - vin_api_url
+      - vite_api_url
+      - vite_backend_url
+      - vite_tawkto_property_id
+      - vite_tawkto_widget_name
+    networks:
+      - fullstack-net
+    restart: unless-stopped
+  client: 
+    build: ./client
+    container_name: react-client
+    ports:
+      - "5173:3000"
+    networks: 
+      - fullstack-net
+    depends_on:
+      - server
+    restart: unless-stopped
+
+secrets:
+  # backend secrets
+
+  api_url:
+    file: ./server/config/secrets/api_url.txt
+  backend_url:
+    file: ./server/config/secrets/backend_url.txt
+  company_name:
+    file: ./server/config/secrets/company_name.txt
+  frontend_url:
+    file: ./server/config/secrets/frontend_url.txt
+  jwt_secret:
+    file: ./server/config/secrets/jwt_secret.txt
+  mongodb_uri:
+    file: ./server/config/secrets/mongodb_uri.txt
+  node_env:
+    file: ./server/config/secrets/node_env.txt
+  port:
+    file: ./server/config/secrets/port.txt
+  rate_limit_max_requests:
+    file: ./server/config/secrets/rate_limit_max_requests.txt
+  rate_limit_window_ms:
+    file: ./server/config/secrets/rate_limit_window_ms.txt
+  report_expiry_days:
+    file: ./server/config/secrets/report_expiry_days.txt
+  report_storage_path:
+    file: ./server/config/secrets/report_storage_path.txt
+  smtp_from_name:
+    file: ./server/config/secrets/smtp_from_name.txt
+  smtp_from:
+    file: ./server/config/secrets/smtp_from.txt
+  smtp_host:
+    file: ./server/config/secrets/smtp_host.txt
+  smtp_pass:
+    file: ./server/config/secrets/smtp_pass.txt
+  smtp_port:
+    file: ./server/config/secrets/smtp_port.txt
+  smtp_secure:
+    file: ./server/config/secrets/smtp_secure.txt
+  smtp_user:
+    file: ./server/config/secrets/smtp_user.txt
+  stripe_secret_key:
+    file: ./server/config/secrets/stripe_secret_key.txt
+  stripe_webhook_secret:
+    file: ./server/config/secrets/stripe_webhook_secret.txt
+  vin_api_key:
+    file: ./server/config/secrets/vin_api_key.txt
+  vin_api_url:
+    file: ./server/config/secrets/vin_api_url.txt
+  vite_api_url:
+    file: ./server/config/secrets/vite_api_url.txt
+  vite_backend_url:
+    file: ./server/config/secrets/vite_backend_url.txt
+  vite_tawkto_property_id:
+    file: ./server/config/secrets/vite_tawkto_property_id.txt
+  vite_tawkto_widget_name:
+    file: ./server/config/secrets/vite_tawkto_widget_name.txt
+
+networks:
+  fullstack-net:
+    driver: bridge

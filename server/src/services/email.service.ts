@@ -1,17 +1,18 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
+import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, SMTP_SECURE } from '@utils/readDockerSecret';
 
 class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      host: SMTP_HOST,
+      port: parseInt(SMTP_PORT || '587'),
+      secure: SMTP_SECURE === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: SMTP_USER,
+        pass: SMTP_PASS,
       },
     });
   }
@@ -59,7 +60,7 @@ class EmailService {
       `;
 
       await this.transporter.sendMail({
-        from: `"Digital Worthy Reports" <${process.env.SMTP_FROM}>`,
+        from: `"Digital Worthy Reports" <${SMTP_FROM}>`,
         to,
         subject,
         html,
@@ -111,7 +112,7 @@ class EmailService {
       `;
 
       await this.transporter.sendMail({
-        from: `"Digital Worthy Reports" <${process.env.SMTP_FROM}>`,
+        from: `"Digital Worthy Reports" <${SMTP_FROM}>`,
         to,
         subject,
         html,
@@ -119,6 +120,7 @@ class EmailService {
 
       logger.info(`Payment confirmation sent to ${to}`);
     } catch (error) {
+      console.error(error)
       logger.error('Error sending payment confirmation:', error);
     }
   }
@@ -167,7 +169,7 @@ class EmailService {
       `;
 
       await this.transporter.sendMail({
-        from: `"Digital Worthy Reports" <${process.env.SMTP_FROM}>`,
+        from: `"Digital Worthy Reports" <${SMTP_FROM}>`,
         to,
         subject,
         html,
@@ -175,6 +177,7 @@ class EmailService {
 
       logger.info(`Report ready email sent to ${to}`);
     } catch (error) {
+      console.error(error)
       logger.error('Error sending report ready email:', error);
     }
   }

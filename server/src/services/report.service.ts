@@ -6,6 +6,7 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
+import { BACKEND_URL } from '@utils/readDockerSecret';
 
 interface VehicleInfo {
   year?: number;
@@ -84,6 +85,7 @@ class ReportService {
       logger.info(`Full report generated for payment: ${payment.transactionId}`);
       return report;
     } catch (error) {
+      console.error(error)
       logger.error('Error generating full report:', error);
       throw error;
     }
@@ -118,7 +120,7 @@ class ReportService {
   }
 
   private async fetchReportData(vin: string, reportType: ReportType): Promise<Partial<IReport>> {
-    // This is mock data - replace with actual data sources in production
+    const data = axios.get(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinextended/${vin}?format=json`);
     const mockData: Partial<IReport> = {
       vehicle: {
         year: 2020,
@@ -154,24 +156,6 @@ class ReportService {
           reportedBy: 'Police Report',
         },
       ],
-      service: {
-        records: [
-          {
-            date: new Date('2020-06-15'),
-            type: 'Oil Change',
-            location: 'Honda Dealership',
-            details: 'Synthetic oil change, tire rotation',
-          },
-          {
-            date: new Date('2021-06-15'),
-            type: 'Brake Service',
-            location: 'AutoCare Center',
-            details: 'Brake pad replacement, fluid flush',
-          },
-        ],
-        lastService: new Date('2023-06-15'),
-        nextService: new Date('2024-06-15'),
-      },
       recalls: [
         {
           id: 'RCL-2022-001',
@@ -254,6 +238,8 @@ class ReportService {
         doc.pipe(stream);
 
         // Header
+
+
         doc.fontSize(24)
            .font('Helvetica-Bold')
            .fillColor('#10B981')
@@ -379,7 +365,7 @@ class ReportService {
         doc.end();
 
         stream.on('finish', () => {
-          const publicUrl = `${process.env.API_URL || 'http://localhost:3000'}/reports/${filename}`;
+          const publicUrl = `${BACKEND_URL || 'http://localhost:5000'}/reports/${filename}`;
           resolve(publicUrl);
         });
 

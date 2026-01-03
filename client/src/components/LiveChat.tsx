@@ -1,12 +1,43 @@
-import { useEffect } from 'react';
+import axios, { AxiosError } from 'axios';
+import { useEffect, useState } from 'react';
+
+interface TawkToCredentials {
+  propertyId: string;
+  widgetName: string;
+}
+
+const fetchTawkToCredentials = async (): Promise<TawkToCredentials | null> => {
+  const backendUrl = "http://localhost:5000";
+  
+  try {
+    const response = await axios.post<TawkToCredentials>(`${backendUrl}/api/config/get-tawkto-credentials`);
+    return {
+      propertyId: response.data.propertyId,
+      widgetName: response.data.widgetName
+    };
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Failed to fetch Tawk.to credentials:', axiosError);
+    return null;
+  }
+};
 
 const LiveChat = () => {
+  const [credentials, setCredentials] = useState<TawkToCredentials | null>(null);
+  
   useEffect(() => {
-    const propertyId = import.meta.env.VITE_TAWKTO_PROPERTY_ID;
-    const widgetName = import.meta.env.VITE_TAWKTO_WIDGET_NAME;
+    const loadCredentials = async () => {
+      const creds = await fetchTawkToCredentials();
+      if (creds) {
+        setCredentials(creds);
+      }
+    };
+    
+    loadCredentials();
+  }, []);
 
-    if (!propertyId || !widgetName) {
-      console.error('Tawk.to credentials not found in environment variables');
+  useEffect(() => {
+    if (!credentials) {
       return;
     }
 
@@ -18,7 +49,7 @@ const LiveChat = () => {
     // Load Tawk.to script
     const script = document.createElement('script');
     script.async = true;
-    script.src = `https://embed.tawk.to/${propertyId}/${widgetName}`;
+    script.src = `https://embed.tawk.to/${credentials.propertyId}/${credentials.widgetName}`;
     script.charset = 'UTF-8';
     script.setAttribute('crossorigin', '*');
     
@@ -49,7 +80,7 @@ const LiveChat = () => {
         }
       }
     };
-  }, []);
+  }, [credentials]);
 
   const toggleChat = () => {
     if (window.Tawk_API?.toggle) {
