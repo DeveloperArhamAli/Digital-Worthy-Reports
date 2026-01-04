@@ -37,6 +37,9 @@ services:
       - vite_backend_url
       - vite_tawkto_property_id
       - vite_tawkto_widget_name
+      - cloudinary_api_secret
+      - cloudinary_api_key
+      - cloudinary_cloud_name
     networks:
       - fullstack-net
     restart: unless-stopped
@@ -114,6 +117,12 @@ secrets:
     file: ./server/config/secrets/vite_tawkto_property_id.txt
   vite_tawkto_widget_name:
     file: ./server/config/secrets/vite_tawkto_widget_name.txt
+  cloudinary_api_secret:
+    file: ./server/config/secrets/cloudinary_api_secret.txt
+  cloudinary_api_key:
+    file: ./server/config/secrets/cloudinary_api_key.txt
+  cloudinary_cloud_name:
+    file: ./server/config/secrets/cloudinary_cloud_name.txt
 
 networks:
   fullstack-net:

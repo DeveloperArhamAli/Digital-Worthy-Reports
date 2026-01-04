@@ -724,10 +724,6 @@ const AdminPage: React.FC = () => {
           </div>
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-gray-800 p-4 text-center text-gray-500 text-sm">
-          <p>© {new Date().getFullYear()} CarReport Admin Panel. All rights reserved.</p>
-        </footer>
       </div>
 
       {/* Payment Details Modal */}

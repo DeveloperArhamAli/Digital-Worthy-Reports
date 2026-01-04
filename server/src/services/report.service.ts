@@ -1,12 +1,9 @@
 import { IPayment, ReportType, PaymentStatus } from '../models/Payment.model';
 import { Report, IReport } from '../models/Report.model';
-import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
 import PDFDocument from 'pdfkit';
-import { BACKEND_URL } from '@utils/readDockerSecret';
+import cloudinaryStorage from './cloudinary.service';
 
 interface VehicleInfo {
   year?: number;
@@ -18,37 +15,56 @@ interface VehicleInfo {
   transmission?: string;
   drivetrain?: string;
   fuelType?: string;
+  plantCity?: string;
+  plantState?: string;
+  plantCountry?: string;
+  vin?: string;
+  gvwr?: string;
+  manufacturer?: string;
+  engineSpecs?: {
+    cylinders?: string;
+    displacement?: string;
+    horsepower?: string;
+  };
+}
+
+interface SafetyInfo {
+  brakeSystemType?: string;
+  seatBeltsAll?: string;
+  abs?: string;
+  tractionControl?: string;
+  safetyFeatures?: string[];
+}
+
+interface MarketData {
+  estimatedValue?: number;
+  valueRange?: { low: number; high: number };
+  comparison?: Array<{ model: string; year: number; price: number; location: string }>;
 }
 
 class ReportService {
+  private cloudinaryStorage = cloudinaryStorage;
+
   async generateFullReport(payment: IPayment): Promise<IReport> {
     try {
-      // Check if report already exists for this payment
       const existingReport = await Report.findOne({ paymentId: payment._id });
       if (existingReport) {
         logger.info(`Report already exists for payment: ${payment._id}`);
         return existingReport;
       }
 
-      // Decode VIN
       const vehicleInfo = await this.decodeVIN(payment.vin);
       
-      // Fetch report data
-      const reportData = await this.fetchReportData(payment.vin, payment.reportType);
+      const reportData = await this.fetchReportData(payment.vin, payment.reportType, vehicleInfo);
       
-      // Generate verdict for Silver and Gold reports
       let verdict;
       if (payment.reportType !== ReportType.BASIC) {
-        verdict = this.generateVerdict(reportData);
+        verdict = this.generateVerdict(reportData, payment.reportType);
       }
 
-      // Generate PDF report
-      const pdfUrl = await this.generatePDF({
+      const pdfBuffer = await this.generatePDFBuffer({
         ...reportData,
-        vehicle: {
-          ...vehicleInfo,
-          vin: payment.vin,
-        },
+        vehicle: vehicleInfo,
         verdict,
         paymentDetails: {
           transactionId: payment.transactionId,
@@ -59,36 +75,239 @@ class ReportService {
         },
       });
 
-      // Calculate expiry date (30 days from now)
+      const cloudinaryResult = await this.cloudinaryStorage.uploadReport(
+        pdfBuffer,
+        payment.transactionId,
+        payment.reportType
+      );
+
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
-      // Create report document
       const report = await Report.create({
         paymentId: payment._id,
         vin: payment.vin,
         reportType: payment.reportType,
         ...reportData,
         verdict,
-        reportUrl: pdfUrl,
+        reportUrl: cloudinaryResult.secureUrl,
+        cloudStorage: {
+          provider: 'cloudinary',
+          publicId: cloudinaryResult.publicId,
+          url: cloudinaryResult.url,
+          secureUrl: cloudinaryResult.secureUrl,
+        },
         downloadCount: 0,
         expiresAt,
       });
 
-      // Update payment with report URL
       await payment.updateOne({
-        reportUrl: pdfUrl,
+        reportUrl: cloudinaryResult.secureUrl,
         reportGeneratedAt: new Date(),
-        status: PaymentStatus.COMPLETED
+        status: PaymentStatus.COMPLETED,
+        cloudinaryPublicId: cloudinaryResult.publicId,
       });
 
       logger.info(`Full report generated for payment: ${payment.transactionId}`);
+      logger.info(`Cloudinary URL: ${cloudinaryResult.secureUrl}`);
+      
       return report;
     } catch (error) {
-      console.error(error)
+      console.error(error);
       logger.error('Error generating full report:', error);
       throw error;
     }
+  }
+
+  private async generatePDFBuffer(reportData: any): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      try {
+        const chunks: Buffer[] = [];
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        this.generatePDFContentByPlan(doc, reportData);
+        
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  private generatePDFContentByPlan(doc: PDFKit.PDFDocument, reportData: any): void {
+    const { reportType } = reportData.paymentDetails;
+    
+    doc.fontSize(24)
+       .font('Helvetica-Bold')
+       .fillColor('#10B981')
+       .text('VEHICLE HISTORY REPORT', { align: 'center' });
+    
+    doc.moveDown(0.5);
+    doc.fontSize(10)
+       .font('Helvetica')
+       .fillColor('#666666')
+       .text(`Plan: ${reportType.toUpperCase()}`, { align: 'center' })
+       .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
+       .text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
+    
+    doc.moveDown(1);
+
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .fillColor('#000000')
+       .text('VEHICLE IDENTIFICATION');
+    
+    doc.moveDown(0.5);
+    doc.fontSize(12)
+       .font('Helvetica')
+       .fillColor('#333333');
+    
+    doc.text(`VIN: ${reportData.vehicle.vin}`);
+    doc.text(`Year: ${reportData.vehicle.year || 'N/A'}`);
+    doc.text(`Make: ${reportData.vehicle.make || 'N/A'}`);
+    doc.text(`Model: ${reportData.vehicle.model || 'N/A'}`);
+    doc.text(`Vehicle Type: ${reportData.vehicle.bodyStyle || 'N/A'}`);
+    doc.text(`Manufacturer: ${reportData.vehicle.manufacturer || 'N/A'}`);
+    
+    doc.moveDown(1);
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .text('VIN VALIDATION');
+    
+    doc.moveDown(0.5);
+    doc.fontSize(12);
+    doc.text('✓ VIN decoded successfully');
+    doc.text('✓ Check digit verified');
+    
+    doc.moveDown(1);
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .text('MANUFACTURING DETAILS');
+    
+    doc.moveDown(0.5);
+    doc.fontSize(12);
+    if (reportData.vehicle.plantCity) {
+      doc.text(`Plant: ${reportData.vehicle.plantCity}, ${reportData.vehicle.plantState || ''}`);
+    }
+    doc.text(`Country: ${reportData.vehicle.plantCountry || 'N/A'}`);
+    
+    if (reportData.accuracyNote) {
+      doc.moveDown(1);
+      doc.fontSize(12)
+         .font('Helvetica-Oblique')
+         .fillColor('#F59E0B')
+         .text(`Note: ${reportData.accuracyNote}`);
+      doc.fillColor('#333333');
+    }
+
+    if (reportType !== ReportType.BASIC) {
+      doc.addPage();
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('ENGINE SPECIFICATIONS');
+      
+      doc.moveDown(0.5);
+      doc.fontSize(12);
+      
+      doc.text(`Engine Type: ${reportData.vehicle.engine || 'N/A'}`);
+      doc.text(`Fuel Type: ${reportData.vehicle.fuelType || 'N/A'}`);
+      doc.text(`Drive Type: ${reportData.vehicle.drivetrain || 'N/A'}`);
+      doc.text(`Transmission: ${reportData.vehicle.transmission || 'N/A'}`);
+      
+      if (reportData.vehicle.engineSpecs) {
+        doc.moveDown(0.5);
+        doc.text(`Cylinders: ${reportData.vehicle.engineSpecs.cylinders || 'N/A'}`);
+        doc.text(`Displacement: ${reportData.vehicle.engineSpecs.displacement || 'N/A'}`);
+        doc.text(`Horsepower: ${reportData.vehicle.engineSpecs.horsepower || 'N/A'}`);
+      }
+      
+      doc.moveDown(1);
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('PERFORMANCE DATA');
+      
+      doc.moveDown(0.5);
+      doc.fontSize(12);
+      if (reportData.vehicle.gvwr) {
+        doc.text(`Weight Rating: ${reportData.vehicle.gvwr}`);
+      }
+    }
+
+    if (reportType === ReportType.GOLD) {
+      doc.addPage();
+      
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('SAFETY FEATURES');
+      
+      doc.moveDown(0.5);
+      doc.fontSize(12);
+      
+      if (reportData.safety?.features && reportData.safety.features.length > 0) {
+        reportData.safety.features.forEach((feature: string) => {
+          doc.text(`• ${feature}`);
+        });
+      } else {
+        doc.text('No additional safety data available');
+      }
+      
+      doc.moveDown(1);
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('MARKET ANALYSIS');
+      
+      doc.moveDown(0.5);
+      doc.fontSize(12);
+      
+      if (reportData.market) {
+        doc.text(`Estimated Value: $${reportData.market.estimatedValue?.toLocaleString() || 'N/A'}`);
+        if (reportData.market.valueRange) {
+          doc.text(`Value Range: $${reportData.market.valueRange.low?.toLocaleString()} - $${reportData.market.valueRange.high?.toLocaleString()}`);
+        }
+      }
+
+      doc.addPage();
+      if (reportData.verdict) {
+        doc.fontSize(18)
+           .font('Helvetica-Bold')
+           .fillColor('#10B981')
+           .text('FINAL ASSESSMENT', { align: 'center' });
+        
+        doc.moveDown(1);
+        doc.fontSize(36)
+           .fillColor(reportData.verdict.score >= 80 ? '#10B981' : 
+                     reportData.verdict.score >= 60 ? '#F59E0B' : '#EF4444')
+           .text(`${reportData.verdict.score}/100`, { align: 'center' });
+        
+        doc.moveDown(1);
+        doc.fontSize(20)
+           .fillColor('#000000')
+           .text(`Recommendation: ${reportData.verdict.recommendation}`, { align: 'center' });
+        
+        if (reportData.verdict.reasons && reportData.verdict.reasons.length > 0) {
+          doc.moveDown(1);
+          doc.fontSize(14)
+             .text('Key Factors:');
+          
+          reportData.verdict.reasons.forEach((reason: string) => {
+            doc.fontSize(12)
+               .text(`• ${reason}`);
+          });
+        }
+      }
+    }
+
+    doc.addPage();
+    doc.fontSize(10)
+       .fillColor('#666666')
+       .text('CONFIDENTIAL REPORT - FOR CUSTOMER USE ONLY', { align: 'center' })
+       .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
+       .text(`Valid until: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}`, { align: 'center' })
+       .text('Copyright © Digital Worthy Reports', { align: 'center' })
   }
 
   private async decodeVIN(vin: string): Promise<VehicleInfo> {
@@ -97,116 +316,159 @@ class ReportService {
         `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`
       );
 
-      if (response.data.Results) {
-        const results = response.data.Results;
+      if (response.data.Results && response.data.Results.length > 0) {
+        const results = response.data.Results.reduce((acc: any, item: any) => {
+          acc[item.Variable] = item.Value;
+          return acc;
+        }, {});
+
         return {
-          year: parseInt(results.find((r: any) => r.Variable === 'Model Year')?.Value) || undefined,
-          make: results.find((r: any) => r.Variable === 'Make')?.Value,
-          model: results.find((r: any) => r.Variable === 'Model')?.Value,
-          trim: results.find((r: any) => r.Variable === 'Trim')?.Value,
-          bodyStyle: results.find((r: any) => r.Variable === 'Body Style')?.Value,
-          engine: results.find((r: any) => r.Variable === 'Engine Model')?.Value,
-          transmission: results.find((r: any) => r.Variable === 'Transmission Style')?.Value,
-          drivetrain: results.find((r: any) => r.Variable === 'Drive Type')?.Value,
-          fuelType: results.find((r: any) => r.Variable === 'Fuel Type - Primary')?.Value,
+          year: results['Model Year'] ? parseInt(results['Model Year']) : undefined,
+          make: results['Make'],
+          model: results['Model'],
+          trim: results['Trim'],
+          bodyStyle: results['Body Class'],
+          engine: results['Engine Model'],
+          transmission: results['Transmission Style'],
+          drivetrain: results['Drive Type'],
+          fuelType: results['Fuel Type - Primary'],
+          manufacturer: results['Manufacturer Name'],
+          vin: vin,
+          plantCity: results['Plant City'],
+          plantState: results['Plant State'],
+          plantCountry: results['Plant Country'],
+          engineSpecs: {
+            cylinders: results['Engine Number of Cylinders'],
+            displacement: results['Displacement (L)'],
+            horsepower: results['Engine Brake (hp) From'],
+          },
+          gvwr: results['Gross Vehicle Weight Rating From'],
         };
       }
 
-      return {};
+      return { vin };
     } catch (error) {
-      logger.warn(`Failed to decode VIN ${vin}:`, error);
-      return {};
+      logger.warn(`Failed to decode VIN ${vin} from NHTSA:`, error);
+      return { vin };
     }
   }
 
-  private async fetchReportData(vin: string, reportType: ReportType): Promise<Partial<IReport>> {
-    const data = axios.get(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinextended/${vin}?format=json`);
-    const mockData: Partial<IReport> = {
-      vehicle: {
-        year: 2020,
-        make: 'Honda',
-        model: 'Accord',
-        trim: 'EX-L',
-        bodyStyle: 'Sedan',
-        engine: '2.0L 4-cylinder',
-        transmission: 'Automatic',
-        drivetrain: 'FWD',
-        fuelType: 'Gasoline',
-      },
-      title: {
-        status: 'Clean',
-        issueDate: new Date('2020-01-15'),
-        state: 'CA',
-      },
-      odometer: {
-        lastReading: 45230,
-        unit: 'miles',
-        readings: [
-          { date: new Date('2020-06-01'), reading: 12000, unit: 'miles' },
-          { date: new Date('2021-06-01'), reading: 25000, unit: 'miles' },
-          { date: new Date('2022-06-01'), reading: 38000, unit: 'miles' },
-          { date: new Date('2023-06-01'), reading: 45230, unit: 'miles' },
-        ],
-      },
-      accidents: [
-        {
-          date: new Date('2021-03-15'),
-          severity: 'Minor',
-          description: 'Rear bumper damage - police report filed',
-          reportedBy: 'Police Report',
-        },
-      ],
-      recalls: [
-        {
-          id: 'RCL-2022-001',
-          date: new Date('2022-03-01'),
-          description: 'Airbag sensor replacement',
-          status: 'Completed',
-        },
-      ],
-      theft: {
-        isStolen: false,
-      },
+  private async fetchReportData(vin: string, reportType: ReportType, vehicleInfo: VehicleInfo): Promise<any> {
+    const reportData: any = {
+      vehicle: vehicleInfo,
+      accuracyNote: vehicleInfo.year ? undefined : 'Year information may be approximate',
     };
 
-    // Add market data for Silver and Gold reports
-    if (reportType === ReportType.SILVER || reportType === ReportType.GOLD) {
-      mockData.market = {
-        value: 25000,
-        range: { low: 23000, high: 27000 },
-        comparison: [
-          { vin: '1HGCM82633A123457', price: 25500, location: 'Los Angeles, CA' },
-          { vin: '1HGCM82633A123458', price: 24800, location: 'San Diego, CA' },
-        ],
-      };
+    if (reportType === ReportType.GOLD) {
+      reportData.safety = await this.fetchSafetyData(vin);
+      reportData.market = await this.estimateMarketValue(vehicleInfo);
     }
 
-    return mockData;
+    if (reportType !== ReportType.BASIC) {
+      reportData.recalls = await this.fetchRecallData(vin);
+    }
+
+    return reportData;
   }
 
-  private generateVerdict(data: Partial<IReport>): IReport['verdict'] {
+  private async fetchSafetyData(vin: string): Promise<SafetyInfo> {
+    try {
+      const response = await axios.get(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinextended/${vin}?format=json`
+      );
+
+      if (response.data.Results) {
+        const results = response.data.Results;
+        const safetyFeatures: string[] = [];
+        
+        if (results.find((r: any) => r.Variable === 'Anti-lock Braking System (ABS)' && r.Value === 'Standard')) {
+          safetyFeatures.push('Anti-lock Braking System (ABS)');
+        }
+        if (results.find((r: any) => r.Variable === 'Traction Control' && r.Value === 'Standard')) {
+          safetyFeatures.push('Traction Control');
+        }
+        if (results.find((r: any) => r.Variable === 'Electronic Stability Control (ESC)' && r.Value === 'Standard')) {
+          safetyFeatures.push('Electronic Stability Control (ESC)');
+        }
+
+        return {
+          brakeSystemType: results.find((r: any) => r.Variable === 'Brake System Type')?.Value,
+          seatBeltsAll: results.find((r: any) => r.Variable === 'Seat Belt Type')?.Value,
+          abs: results.find((r: any) => r.Variable === 'Anti-lock Braking System (ABS)')?.Value,
+          tractionControl: results.find((r: any) => r.Variable === 'Traction Control')?.Value,
+          safetyFeatures,
+        };
+      }
+    } catch (error) {
+      logger.warn(`Failed to fetch safety data for VIN ${vin}:`, error);
+    }
+    
+    return {};
+  }
+
+  private async fetchRecallData(vin: string): Promise<any[]> {
+    try {
+      const response = await axios.get(
+        `https://api.nhtsa.gov/recalls/recallsByVin?vin=${vin}&format=json`
+      );
+      
+      if (response.data && response.data.results) {
+        return response.data.results.map((recall: any) => ({
+          id: recall.NHTSACampaignNumber,
+          date: new Date(recall.ReportReceivedDate),
+          description: recall.DefectSummary,
+          status: recall.Component,
+          manufacturer: recall.Manufacturer,
+        }));
+      }
+    } catch (error) {
+      logger.warn(`Failed to fetch recall data for VIN ${vin}:`, error);
+    }
+    
+    return [];
+  }
+
+  private async estimateMarketValue(vehicleInfo: VehicleInfo): Promise<MarketData> {
+    const baseValue = 15000; // Base value for estimation
+    const yearMultiplier = vehicleInfo.year ? (new Date().getFullYear() - vehicleInfo.year) * -500 : 0;
+    const estimatedValue = Math.max(baseValue + yearMultiplier, 3000);
+    
+    return {
+      estimatedValue,
+      valueRange: {
+        low: Math.round(estimatedValue * 0.85),
+        high: Math.round(estimatedValue * 1.15),
+      },
+    };
+  }
+
+  private generateVerdict(reportData: any, reportType: ReportType): any {
     let score = 100;
     const reasons: string[] = [];
 
-    if (data.accidents && data.accidents.length > 0) {
-      score -= data.accidents.length * 10;
-      reasons.push(`${data.accidents.length} accident${data.accidents.length > 1 ? 's' : ''} reported`);
+    if (reportData.vehicle.year && (new Date().getFullYear() - reportData.vehicle.year) > 10) {
+      score -= 10;
+      reasons.push('Vehicle is over 10 years old');
     }
 
-    if (data.recalls && data.recalls.some(r => r.status !== 'Completed')) {
-      score -= 15;
-      reasons.push('Open recalls pending');
+    if (reportData.vehicle.make && reportData.vehicle.model && reportData.vehicle.year) {
+      score += 5;
+      reasons.push('Complete vehicle identification');
     }
 
-    if (data.title?.status === 'Salvage') {
-      score -= 40;
-      reasons.push('Salvage title');
+    if (reportType === ReportType.GOLD) {
+      if (reportData.safety?.safetyFeatures && reportData.safety.safetyFeatures.length > 2) {
+        score += 10;
+        reasons.push('Good safety features');
+      }
+      
+      if (reportData.recalls && reportData.recalls.length === 0) {
+        score += 5;
+        reasons.push('No open recalls');
+      }
     }
 
-    if (data.service?.records && data.service.records.length >= 3) {
-      score += 10;
-      reasons.push('Good service history');
-    }
+    score = Math.max(0, Math.min(100, score));
 
     let recommendation: 'BUY' | 'AVOID' | 'CAUTION';
     if (score >= 80) {
@@ -218,162 +480,6 @@ class ReportService {
     }
 
     return { score, recommendation, reasons };
-  }
-
-  private async generatePDF(reportData: any): Promise<string> {
-    return new Promise((resolve, reject) => {
-      try {
-        const filename = `report-${uuidv4()}.pdf`;
-        const reportsDir = path.join(__dirname, '../../public/reports');
-        const filePath = path.join(reportsDir, filename);
-        
-        // Ensure directory exists
-        if (!fs.existsSync(reportsDir)) {
-          fs.mkdirSync(reportsDir, { recursive: true });
-        }
-
-        const doc = new PDFDocument({ margin: 50, size: 'A4' });
-        const stream = fs.createWriteStream(filePath);
-        
-        doc.pipe(stream);
-
-        // Header
-
-
-        doc.fontSize(24)
-           .font('Helvetica-Bold')
-           .fillColor('#10B981')
-           .text('VEHICLE HISTORY REPORT', { align: 'center' });
-        
-        doc.moveDown(0.5);
-        doc.fontSize(12)
-           .font('Helvetica')
-           .fillColor('#333333')
-           .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
-           .text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
-        
-        doc.moveDown(1);
-
-        // Vehicle Information
-        doc.fontSize(16)
-           .font('Helvetica-Bold')
-           .fillColor('#000000')
-           .text('VEHICLE INFORMATION');
-        
-        doc.moveDown(0.5);
-        doc.fontSize(12)
-           .font('Helvetica')
-           .fillColor('#333333');
-        
-        doc.text(`VIN: ${reportData.vehicle.vin}`);
-        doc.text(`Year: ${reportData.vehicle.year || 'N/A'}`);
-        doc.text(`Make: ${reportData.vehicle.make || 'N/A'}`);
-        doc.text(`Model: ${reportData.vehicle.model || 'N/A'}`);
-        doc.text(`Trim: ${reportData.vehicle.trim || 'N/A'}`);
-        doc.moveDown(1);
-
-        // Title Information
-        if (reportData.title) {
-          doc.fontSize(16)
-             .font('Helvetica-Bold')
-             .text('TITLE HISTORY');
-          
-          doc.moveDown(0.5);
-          doc.fontSize(12)
-             .font('Helvetica')
-             .text(`Status: ${reportData.title.status}`);
-          
-          if (reportData.title.state) {
-            doc.text(`State: ${reportData.title.state}`);
-          }
-          doc.moveDown(1);
-        }
-
-        // Accident History
-        if (reportData.accidents && reportData.accidents.length > 0) {
-          doc.fontSize(16)
-             .font('Helvetica-Bold')
-             .text('ACCIDENT HISTORY');
-          
-          doc.moveDown(0.5);
-          reportData.accidents.forEach((accident: any, index: number) => {
-            doc.fontSize(12)
-               .text(`Accident ${index + 1}: ${new Date(accident.date).toLocaleDateString()} - ${accident.severity}`);
-            doc.fontSize(10)
-               .text(`   ${accident.description}`);
-            doc.moveDown(0.5);
-          });
-          doc.moveDown(1);
-        }
-
-        // Service Records
-        if (reportData.service?.records && reportData.service.records.length > 0) {
-          doc.addPage();
-          doc.fontSize(16)
-             .font('Helvetica-Bold')
-             .text('SERVICE HISTORY');
-          
-          doc.moveDown(0.5);
-          reportData.service.records.forEach((service: any, index: number) => {
-            doc.fontSize(12)
-               .text(`${new Date(service.date).toLocaleDateString()}: ${service.type}`);
-            doc.fontSize(10)
-               .text(`   Location: ${service.location}`);
-            doc.moveDown(0.5);
-          });
-          doc.moveDown(1);
-        }
-
-        // Verdict
-        if (reportData.verdict) {
-          doc.addPage();
-          doc.fontSize(18)
-             .font('Helvetica-Bold')
-             .fillColor('#10B981')
-             .text('FINAL ASSESSMENT', { align: 'center' });
-          
-          doc.moveDown(1);
-          doc.fontSize(36)
-             .fillColor(reportData.verdict.score >= 80 ? '#10B981' : 
-                       reportData.verdict.score >= 60 ? '#F59E0B' : '#EF4444')
-             .text(`${reportData.verdict.score}/100`, { align: 'center' });
-          
-          doc.moveDown(1);
-          doc.fontSize(20)
-             .fillColor('#000000')
-             .text(`Recommendation: ${reportData.verdict.recommendation}`, { align: 'center' });
-          
-          doc.moveDown(1);
-          doc.fontSize(14)
-             .text('Key Factors:');
-          
-          reportData.verdict.reasons.forEach((reason: string) => {
-            doc.fontSize(12)
-               .text(`• ${reason}`);
-          });
-        }
-
-        // Footer
-        doc.addPage();
-        doc.fontSize(10)
-           .fillColor('#666666')
-           .text('CONFIDENTIAL REPORT - FOR CUSTOMER USE ONLY', { align: 'center' })
-           .text(`Report ID: ${reportData.paymentDetails.transactionId}`, { align: 'center' })
-           .text(`Valid until: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}`, { align: 'center' })
-           .text('© Digital Worthy Reports', { align: 'center' });
-
-        doc.end();
-
-        stream.on('finish', () => {
-          const publicUrl = `${BACKEND_URL || 'http://localhost:5000'}/reports/${filename}`;
-          resolve(publicUrl);
-        });
-
-        stream.on('error', reject);
-      } catch (error) {
-        reject(error);
-      }
-    });
   }
 
   async getReportById(reportId: string): Promise<IReport | null> {
@@ -391,15 +497,12 @@ class ReportService {
     }
   }
 
-  async validateReportAccess(reportId: string): Promise<boolean> {
+  async deleteReport(publicId: string): Promise<void> {
     try {
-      const report = await Report.findById(reportId);
-      if (!report) return false;
-      
-      return report.expiresAt > new Date();
+      await this.cloudinaryStorage.deleteReport(publicId);
     } catch (error) {
-      logger.error('Error validating report access:', error);
-      return false;
+      logger.error('Error deleting report:', error);
+      throw error;
     }
   }
 }

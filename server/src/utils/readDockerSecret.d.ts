@@ -30,4 +30,8 @@ declare module '@utils/readDockerSecret' {
   export const VITE_BACKEND_URL: string;
   export const VITE_TAWKTO_PROPERTY_ID: string;
   export const VITE_TAWKTO_WIDGET_NAME: string;
+
+  export const CLOUDINARY_CLOUD_NAME: string;
+  export const CLOUDINARY_API_KEY: string;
+  export const CLOUDINARY_API_SECRET: string;
 }

@@ -29,6 +29,7 @@ export interface IPayment extends Document {
   stripeUrl?: string;
   reportUrl?: string;
   reportGeneratedAt?: Date;
+  cloudinaryPublicId: string;
   reportAccessExpiresAt?: Date;
   paidAt?: Date;
   merchantTag: string;
@@ -102,6 +103,9 @@ const PaymentSchema = new Schema({
   },
   reportGeneratedAt: {
     type: Date
+  },
+  cloudinaryPublicId: {
+    type: String
   },
   reportAccessExpiresAt: {
     type: Date,
