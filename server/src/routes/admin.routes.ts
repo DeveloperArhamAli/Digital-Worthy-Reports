@@ -1,78 +1,33 @@
-import express, { Request, Response } from 'express';
-import { Payment } from '../models/Payment.model';
+import express from 'express';
+import {
+  login,
+  refreshToken,
+  logout,
+  getProfile,
+  getAllAdmins,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
+  toggleAdminStatus,
+  changePassword,
+  getPayments
+} from '../controllers/adminAuthController';
+import { authenticate, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/payments', async (req: Request, res: Response) => {
-  try {
-    const {
-      page = 1,
-      limit = 20,
-      search = '',
-      status = 'all',
-      reportType = 'all',
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-      startDate,
-      endDate,
-    } = req.query;
+router.post('/auth/login', login);
+router.post('/auth/refresh-token', refreshToken);
+router.post('/auth/logout', logout);
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
+router.get('/auth/profile', authenticate, getProfile);
+router.post('/auth/change-password', authenticate, changePassword);
 
-    // Build filter
-    const filter: any = {};
-
-    if (status !== 'all') {
-      filter.status = status;
-    }
-
-    if (reportType !== 'all') {
-      filter.reportType = reportType;
-    }
-
-    if (startDate && endDate) {
-      filter.createdAt = {
-        $gte: new Date(startDate as string),
-        $lte: new Date(endDate as string),
-      };
-    }
-
-    // Search in multiple fields
-    if (search) {
-      filter.$or = [
-        { customerName: { $regex: search, $options: 'i' } },
-        { customerEmail: { $regex: search, $options: 'i' } },
-        { vin: { $regex: search, $options: 'i' } },
-        { transactionId: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    // Build sort
-    const sort: any = {};
-    sort[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
-
-    // Fetch payments
-    const payments = await Payment.find(filter)
-      .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
-
-    // Get total count
-    const total = await Payment.countDocuments(filter);
-
-    res.json({
-      payments,
-      total,
-      page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
-    });
-  } catch (error) {
-    console.error('Error fetching payments:', error);
-    res.status(500).json({ error: 'Failed to fetch payments' });
-  }
-});
+router.get('/admins', authenticate, authorize('super_admin'), getAllAdmins);
+router.post('/admins', authenticate, authorize('super_admin'), createAdmin);
+router.put('/admins/:id', authenticate, authorize('super_admin'), updateAdmin);
+router.delete('/admins/:id', authenticate, authorize('super_admin'), deleteAdmin);
+router.patch('/admins/:id/toggle-status', authenticate, authorize('super_admin'), toggleAdminStatus);
+router.post('/payments', authenticate, authorize('admin', 'super_admin'), getPayments);
 
 export default router;

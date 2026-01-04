@@ -12,6 +12,9 @@ services:
       - company_name
       - frontend_url
       - jwt_secret
+      - jwt_expires_in
+      - refresh_token_secret
+      - refresh_token_expires_in
       - mongodb_uri
       - node_env
       - port
@@ -61,6 +64,12 @@ secrets:
     file: ./server/config/secrets/frontend_url.txt
   jwt_secret:
     file: ./server/config/secrets/jwt_secret.txt
+  jwt_expires_in:
+    file: ./server/config/secrets/jwt_expires_in.txt
+  refresh_token_secret:
+    file: ./server/config/secrets/refresh_token_secret.txt
+  refresh_token_expires_in:
+    file: ./server/config/secrets/refresh_token_expires_in.txt
   mongodb_uri:
     file: ./server/config/secrets/mongodb_uri.txt
   node_env:
@@ -69,7 +78,7 @@ secrets:
     file: ./server/config/secrets/port.txt
   rate_limit_max_requests:
     file: ./server/config/secrets/rate_limit_max_requests.txt
-  rate_limit_window_ms:
+  rate_limit_windows_ms:
     file: ./server/config/secrets/rate_limit_windows_ms.txt
   report_expiry_days:
     file: ./server/config/secrets/report_expiry_days.txt

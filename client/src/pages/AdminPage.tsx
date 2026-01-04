@@ -20,9 +20,21 @@ import {
   Shield,
   ExternalLink,
   User,
-  FileText
+  FileText,
+  Home,
+  BarChart3,
+  CreditCard as CreditCardIcon,
+  Users,
+  Settings,
+  LogOut,
+  Bell,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Define the Payment interface matching your schema
 interface Payment {
@@ -132,8 +144,22 @@ const ReportTypeBadge: React.FC<{ type: Payment['reportType'] }> = ({ type }) =>
   );
 };
 
+// Sidebar Navigation Items
+const navItems = [
+  { id: 'dashboard', icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
+  { id: 'payments', icon: CreditCardIcon, label: 'Payments', path: '/admin/payments', active: true },
+  { id: 'reports', icon: FileText, label: 'Reports', path: '/admin/reports' },
+  { id: 'users', icon: Users, label: 'Users', path: '/admin/users' },
+  { id: 'settings', icon: Settings, label: 'Settings', path: '/admin/settings' },
+];
+
 const AdminPage: React.FC = () => {
-  // State management
+  const navigate = useNavigate();
+  
+  // User state
+  const [user, setUser] = useState<any>(null);
+  
+  // Payments state
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -148,9 +174,25 @@ const AdminPage: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    end: new Date().toISOString().split('T')[0], // today
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0],
   });
+
+  // Get user from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  // Protected route check
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/admin-login');
+    }
+  }, [navigate]);
 
   // Fetch payments from API
   const fetchPayments = async () => {
@@ -169,7 +211,11 @@ const AdminPage: React.FC = () => {
         endDate: dateRange.end,
       });
 
-      const response = await axios.get<ApiResponse>(`/api/admin/payments?${params}`);
+      const response = await axios.post<ApiResponse>(`/api/admin/payments?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
       
       if (!response) {
         throw new Error(`Error`);
@@ -277,355 +323,411 @@ const AdminPage: React.FC = () => {
     setShowDetailsModal(true);
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/admin/auth/logout', {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      navigate('/admin-login');
+    }
+  };
+
   // Stats
   const stats = {
-    totalRevenue: payments.reduce((sum, p) => p.status === 'completed' || p.status === 'success' ? sum + p.amount : sum, 0),
-    totalTransactions: payments.length,
-    completedTransactions: payments.filter(p => p.status === 'completed' || p.status === 'success').length,
-    pendingTransactions: payments.filter(p => p.status === 'pending').length,
+    totalRevenue: payments?.reduce((sum, p) => p.status === 'completed' || p.status === 'success' ? sum + p.amount : sum, 0),
+    totalTransactions: payments?.length,
+    completedTransactions: payments?.filter(p => p.status === 'completed' || p.status === 'success').length,
+    pendingTransactions: payments?.filter(p => p.status === 'pending').length,
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
-      {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Payment Dashboard</h1>
-        <p className="text-gray-400">Manage and monitor all payment transactions</p>
-      </header>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gray-800 rounded-xl p-6">
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Main Content */}
+      <div className={`transition-all duration-300`}>
+        {/* Top Bar */}
+        <header className="sticky top-0 z-40 bg-gray-800/80 backdrop-blur-sm border-b border-gray-700 p-4">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Revenue</p>
-              <p className="text-2xl font-bold mt-1">
-                {formatCurrency(stats.totalRevenue, 'USD')}
-              </p>
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-semibold">Payments Dashboard</h1>
             </div>
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Transactions</p>
-              <p className="text-2xl font-bold mt-1">{stats.totalTransactions}</p>
-            </div>
-            <div className="p-3 bg-blue-500/10 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Completed</p>
-              <p className="text-2xl font-bold mt-1">{stats.completedTransactions}</p>
-            </div>
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Pending</p>
-              <p className="text-2xl font-bold mt-1">{stats.pendingTransactions}</p>
-            </div>
-            <div className="p-3 bg-yellow-500/10 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-500" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Controls */}
-      <div className="bg-gray-800 rounded-xl p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              Search
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, email, VIN, or transaction ID"
-                className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-              />
-            </div>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              Status
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="success">Success</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-              <option value="expired">Expired</option>
-            </select>
-          </div>
-
-          {/* Report Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              Report Type
-            </label>
-            <select
-              value={selectedReportType}
-              onChange={(e) => setSelectedReportType(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
-            >
-              <option value="all">All Types</option>
-              <option value="basic">Basic</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-            </select>
-          </div>
-
-          {/* Date Range */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              Date Range
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                className="px-2 py-1 bg-gray-900 border border-gray-700 rounded text-sm text-white"
-              />
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                className="px-2 py-1 bg-gray-900 border border-gray-700 rounded text-sm text-white"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={fetchPayments}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </button>
-            <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-          </div>
-          <div className="text-gray-400 text-sm">
-            Showing {payments.length} of {total} transactions
-          </div>
-        </div>
-      </div>
-
-      {/* Payments Table */}
-      <div className="bg-gray-800 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-900">
-              <tr>
-                <th className="py-3 px-4 text-left">
-                  <button
-                    onClick={() => handleSort('transactionId')}
-                    className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
-                  >
-                    Transaction ID
-                    {sortField === 'transactionId' && (
-                      sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
-                </th>
-                <th className="py-3 px-4 text-left">
-                  <button
-                    onClick={() => handleSort('customerName')}
-                    className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
-                  >
-                    Customer
-                    {sortField === 'customerName' && (
-                      sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
-                </th>
-                <th className="py-3 px-4 text-left">VIN</th>
-                <th className="py-3 px-4 text-left">Report</th>
-                <th className="py-3 px-4 text-left">
-                  <button
-                    onClick={() => handleSort('amount')}
-                    className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
-                  >
-                    Amount
-                    {sortField === 'amount' && (
-                      sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
-                </th>
-                <th className="py-3 px-4 text-left">Status</th>
-                <th className="py-3 px-4 text-left">
-                  <button
-                    onClick={() => handleSort('createdAt')}
-                    className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
-                  >
-                    Created At
-                    {sortField === 'createdAt' && (
-                      sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
-                </th>
-                <th className="py-3 px-4 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      <span>Loading payments...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-red-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <AlertCircle className="w-5 h-5" />
-                      <span>{error}</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : payments.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-400">
-                    No payments found
-                  </td>
-                </tr>
-              ) : (
-                payments.map((payment) => (
-                  <tr key={payment._id} className="hover:bg-gray-750 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="font-mono text-sm text-gray-300">
-                        {payment.transactionId}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div>
-                        <div className="font-medium">{payment.customerName}</div>
-                        <div className="text-sm text-gray-400">{payment.customerEmail}</div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-mono text-sm text-gray-300">{payment.vin}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <ReportTypeBadge type={payment.reportType} />
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-semibold">
-                        {formatCurrency(payment.amount, payment.currency)}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <StatusBadge status={payment.status} />
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm text-gray-400">
-                        {formatDate(payment.createdAt)}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => viewPaymentDetails(payment)}
-                          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {payment.reportUrl && (
-                          <a
-                            href={payment.reportUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                            title="View Report"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                        {payment.stripeUrl && (
-                          <a
-                            href={payment.stripeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                            title="View Stripe Session"
-                          >
-                            <DollarSign className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="border-t border-gray-700 px-6 py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
-                onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors"
               >
-                Previous
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
               </button>
-              <div className="text-sm text-gray-400">
-                Page {page} of {totalPages}
+              <div className="hidden md:flex items-center gap-2">
+                <div className="w-8 h-8 bg-linear-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+                  <span className="font-bold text-sm">{user?.username?.charAt(0) || 'A'}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{user?.username || 'Admin'}</p>
+                  <p className="text-xs text-gray-400">{user?.role || 'admin'}</p>
+                </div>
               </div>
-              <button
-                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
-              >
-                Next
-              </button>
             </div>
           </div>
-        )}
+        </header>
+
+        {/* Main Content Area */}
+        <main className="p-4 md:p-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Total Revenue</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {formatCurrency(stats.totalRevenue, 'USD')}
+                  </p>
+                </div>
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-500" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Total Transactions</p>
+                  <p className="text-2xl font-bold mt-1">{stats.totalTransactions}</p>
+                </div>
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-500" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Completed</p>
+                  <p className="text-2xl font-bold mt-1">{stats.completedTransactions}</p>
+                </div>
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Pending</p>
+                  <p className="text-2xl font-bold mt-1">{stats.pendingTransactions}</p>
+                </div>
+                <div className="p-3 bg-yellow-500/10 rounded-lg">
+                  <Clock className="w-6 h-6 text-yellow-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters and Controls */}
+          <div className="bg-gray-800 rounded-xl p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {/* Search */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Search
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name, email, VIN, or transaction ID"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Status
+                </label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="success">Success</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+
+              {/* Report Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Report Type
+                </label>
+                <select
+                  value={selectedReportType}
+                  onChange={(e) => setSelectedReportType(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                >
+                  <option value="all">All Types</option>
+                  <option value="basic">Basic</option>
+                  <option value="silver">Silver</option>
+                  <option value="gold">Gold</option>
+                </select>
+              </div>
+
+              {/* Date Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Date Range
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    className="px-2 py-1 bg-gray-900 border border-gray-700 rounded text-sm text-white"
+                  />
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    className="px-2 py-1 bg-gray-900 border border-gray-700 rounded text-sm text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={fetchPayments}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+                <button
+                  onClick={exportToCSV}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
+              </div>
+              <div className="text-gray-400 text-sm">
+                Showing {payments?.length} of {total} transactions
+              </div>
+            </div>
+          </div>
+
+          {/* Payments Table */}
+          <div className="bg-gray-800 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-900">
+                  <tr>
+                    <th className="py-3 px-4 text-left">
+                      <button
+                        onClick={() => handleSort('transactionId')}
+                        className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
+                      >
+                        Transaction ID
+                        {sortField === 'transactionId' && (
+                          sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3 px-4 text-left">
+                      <button
+                        onClick={() => handleSort('customerName')}
+                        className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
+                      >
+                        Customer
+                        {sortField === 'customerName' && (
+                          sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3 px-4 text-left">VIN</th>
+                    <th className="py-3 px-4 text-left">Phone Number</th>
+                    <th className="py-3 px-4 text-left">Report</th>
+                    <th className="py-3 px-4 text-left">
+                      <button
+                        onClick={() => handleSort('amount')}
+                        className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
+                      >
+                        Amount
+                        {sortField === 'amount' && (
+                          sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3 px-4 text-left">Status</th>
+                    <th className="py-3 px-4 text-left">
+                      <button
+                        onClick={() => handleSort('createdAt')}
+                        className="flex items-center gap-1 font-semibold text-gray-400 hover:text-white"
+                      >
+                        Created At
+                        {sortField === 'createdAt' && (
+                          sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3 px-4 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          <span>Loading payments...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-red-400">
+                        <div className="flex items-center justify-center gap-2">
+                          <AlertCircle className="w-5 h-5" />
+                          <span>{error}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : payments?.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-gray-400">
+                        No payments found
+                      </td>
+                    </tr>
+                  ) : (
+                    payments?.map((payment) => (
+                      <tr key={payment._id} className="hover:bg-gray-750 transition-colors">
+                        <td className="py-4 px-4">
+                          <div className="font-mono text-sm text-gray-300">
+                            {payment?.transactionId}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div>
+                            <div className="font-medium">{payment?.customerName}</div>
+                            <div className="text-sm text-gray-400">{payment?.customerEmail}</div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="font-mono text-sm text-gray-300">{payment?.vin}</div>
+                        </td>
+                        <td>
+                          <div className="font-medium">{payment?.customerPhone}</div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <ReportTypeBadge type={payment?.reportType} />
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="font-semibold">
+                            {formatCurrency(payment?.amount, payment?.currency)}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <StatusBadge status={payment?.status} />
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="text-sm text-gray-400">
+                            {formatDate(payment?.createdAt)}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => viewPaymentDetails(payment)}
+                              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {payment?.reportUrl && (
+                              <a
+                                href={payment?.reportUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                                title="View Report"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </a>
+                            )}
+                            {payment?.stripeUrl && (
+                              <a
+                                href={payment?.stripeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                                title="View Stripe Session"
+                              >
+                                <DollarSign className="w-4 h-4" />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="border-t border-gray-700 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                    disabled={page === 1}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous
+                  </button>
+                  <div className="text-sm text-gray-400">
+                    Page {page} of {totalPages}
+                  </div>
+                  <button
+                    onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={page === totalPages}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-gray-800 p-4 text-center text-gray-500 text-sm">
+          <p>© {new Date().getFullYear()} CarReport Admin Panel. All rights reserved.</p>
+        </footer>
       </div>
 
       {/* Payment Details Modal */}

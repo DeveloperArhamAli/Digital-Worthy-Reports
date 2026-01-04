@@ -4,6 +4,9 @@ declare module '@utils/readDockerSecret' {
   export const COMPANY_NAME: string;
   export const FRONTEND_URL: string;
   export const JWT_SECRET: string;
+  export const JWT_EXPIRES_IN: number;
+  export const REFRESH_TOKEN_SECRET: string;
+  export const REFRESH_TOKEN_EXPIRES_IN: number;
   export const NODE_ENV: string;
   export const MONGODB_URI: string;
   export const PORT: string;

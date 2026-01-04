@@ -16,7 +16,9 @@ const app = express();
 
 connectDB();
 
-// Security middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(helmet());
 app.use(cors({
   origin: FRONTEND_URL || 'http://localhost:5173',
@@ -31,9 +33,6 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use('/reports', express.static(path.join(__dirname, '../public/reports')));
 

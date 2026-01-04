@@ -10,6 +10,7 @@ import PricingPage from './pages/PricingPage.tsx'
 import PaymentSuccess from './pages/PaymentSuccess.tsx'
 import PaymentCancel from './pages/PaymentCancel.tsx'
 import AdminPage from './pages/AdminPage.tsx'
+import AdminLoginPage from './pages/AdminLoginPage.tsx'
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
       {
         path: "/admin",
         element: <AdminPage />
+      },
+      {
+        path: "/admin-login",
+        element: <AdminLoginPage />
       }
     ]
   }
