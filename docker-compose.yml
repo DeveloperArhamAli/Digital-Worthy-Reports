@@ -19,7 +19,7 @@ services:
       - node_env
       - port
       - rate_limit_max_requests
-      - rate_limit_window_ms
+      - rate_limit_windows_ms
       - report_expiry_days
       - report_storage_path
       - smtp_from_name

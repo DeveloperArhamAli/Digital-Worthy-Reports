@@ -20,7 +20,7 @@ export class CloudinaryStorageService {
       return new Promise((resolve, reject) => {
         const pdfBase64 = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
         
-        const publicId = `car-reports/${reportType.toLowerCase()}/${transactionId}_${uuidv4().substring(0, 8)}`;
+        const publicId = `car-reports/${reportType.toLowerCase()}/${transactionId}_${uuidv4().substring(0, 8)}.pdf`;
         
         cloudinary.uploader.upload(
           pdfBase64,
@@ -30,12 +30,16 @@ export class CloudinaryStorageService {
             resource_type: 'raw',
             type: 'upload',
             overwrite: false,
+            access_mode: 'public',
             tags: [`report-${reportType}`, 'vehicle-report', transactionId],
             context: {
               transactionId: transactionId,
               reportType: reportType,
               uploadedAt: new Date().toISOString(),
-            }
+            },
+            filename_override: `${transactionId}.pdf`,
+            use_filename: true,
+            unique_filename: false,
           },
           (error, result) => {
             if (error) {
@@ -43,10 +47,14 @@ export class CloudinaryStorageService {
               reject(new Error(`Failed to upload to Cloudinary: ${error.message}`));
             } else if (result) {
               logger.info(`Report uploaded to Cloudinary: ${result.public_id}`);
+
+              const secureUrl = this.ensurePdfExtension(result.secure_url);
+              const url = this.ensurePdfExtension(result.url);
+              
               resolve({
-                url: result.url,
+                url: url,
                 publicId: result.public_id,
-                secureUrl: result.secure_url,
+                secureUrl: secureUrl,
               });
             } else {
               reject(new Error('No result returned from Cloudinary'));
@@ -60,6 +68,13 @@ export class CloudinaryStorageService {
     }
   }
 
+  private ensurePdfExtension(url: string): string {
+    if (url.toLowerCase().endsWith('.pdf')) {
+      return url;
+    }
+    return `${url}.pdf`;
+  }
+
   async generateSignedUrl(publicId: string, expiresIn: number = 3600): Promise<string> {
     try {
       const timestamp = Math.round(Date.now() / 1000);
@@ -69,10 +84,10 @@ export class CloudinaryStorageService {
           timestamp: timestamp,
           expires_at: timestamp + expiresIn,
         },
-        process.env.CLOUDINARY_API_SECRET!
+        CLOUDINARY_API_SECRET!
       );
 
-      return cloudinary.url(publicId, {
+      let url = cloudinary.url(publicId, {
         resource_type: 'raw',
         type: 'authenticated',
         version: timestamp,
@@ -80,6 +95,8 @@ export class CloudinaryStorageService {
         expires_at: timestamp + expiresIn,
         secure: true,
       });
+
+      return this.ensurePdfExtension(url);
     } catch (error) {
       logger.error('Error generating signed URL:', error);
       throw error;

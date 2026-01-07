@@ -15,12 +15,6 @@ class ReportController {
         return;
       }
 
-      const hasAccess = await ReportService.validateReportAccess(reportId);
-      if (!hasAccess) {
-        res.status(403).json({ error: 'Report access expired' });
-        return;
-      }
-
       res.json({
         success: true,
         report: {
@@ -49,12 +43,6 @@ class ReportController {
         return;
       }
 
-      const hasAccess = await ReportService.validateReportAccess(reportId);
-      if (!hasAccess) {
-        res.status(403).json({ error: 'Report access expired' });
-        return;
-      }
-
       res.redirect(report.reportUrl);
     } catch (error) {
       logger.error('Error downloading report:', error);
@@ -75,12 +63,6 @@ class ReportController {
       const report = await Report.findOne({ paymentId: payment._id });
       if (!report) {
         res.status(404).json({ error: 'Report not found' });
-        return;
-      }
-
-      const hasAccess = await ReportService.validateReportAccess(report._id.toString());
-      if (!hasAccess) {
-        res.status(403).json({ error: 'Report access expired' });
         return;
       }
 

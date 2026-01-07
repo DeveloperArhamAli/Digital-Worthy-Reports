@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, Mail, Download, Home, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -25,7 +25,9 @@ const PaymentSuccess = () => {
         
         // Verify payment with backend
         const result = await axios.get(`${backendUrl}/api/verify-payment/${orderId}`);
+        console.log(orderId)
         console.log("Verification result:", result.data.reportUrl);
+
         
         if (result.data.success && result.data.verified) {
           setOrderDetails({
