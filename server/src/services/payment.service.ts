@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Payment, IPayment, PaymentStatus, ReportType } from '../models/Payment.model';
 import { logger } from '../utils/logger';
 import reportService from './report.service';
-import { COMPANY_NAME, FRONTEND_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '@utils/readDockerSecret';
 
 interface CreateOrderParams {
   plan: string;
@@ -19,7 +18,7 @@ class PaymentService {
   private stripe: Stripe;
 
   constructor() {
-    this.stripe = new Stripe(STRIPE_SECRET_KEY!, {
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
       apiVersion: '2023-10-16',
       typescript: true,
     });
@@ -46,10 +45,10 @@ class PaymentService {
         currency: 'USD',
         transactionId,
         status: PaymentStatus.PENDING,
-        merchantTag: COMPANY_NAME,
+        merchantTag: process.env.COMPANY_NAME,
         metadata: {
-          source: COMPANY_NAME,
-          merchant: COMPANY_NAME,
+          source: process.env.COMPANY_NAME,
+          merchant: process.env.COMPANY_NAME,
           plan,
           vinLength: vin.length,
           customerName: customer.name
@@ -67,7 +66,7 @@ class PaymentService {
                 name: `${plan.toUpperCase()} Vehicle History Report`,
                 description: `VIN: ${vin.toUpperCase()}`,
                 metadata: {
-                  merchant: COMPANY_NAME!,
+                  merchant: process.env.COMPANY_NAME!,
                   product_type: 'vehicle_history_report',
                 }
               },
@@ -77,12 +76,12 @@ class PaymentService {
           },
         ],
         mode: 'payment',
-        success_url: `${FRONTEND_URL}/payment-success?orderId=${payment._id}`,
-        cancel_url: `${FRONTEND_URL}/payment-cancel?orderId=${payment._id}`,
+        success_url: `${process.env.FRONTEND_URL}/payment-success?orderId=${payment._id}`,
+        cancel_url: `${process.env.FRONTEND_URL}/payment-cancel?orderId=${payment._id}`,
         customer_email: customer.email,
         metadata: {
-          merchant: COMPANY_NAME!,
-          source: COMPANY_NAME!,
+          merchant: process.env.COMPANY_NAME!,
+          source: process.env.COMPANY_NAME!,
           transaction_type: 'vehicle_history_report',
           orderId: payment._id.toString(),
           vin: vin.toUpperCase(),
@@ -91,7 +90,7 @@ class PaymentService {
         },
 
         client_reference_id: payment._id.toString(),
-      }, { apiKey: STRIPE_SECRET_KEY });
+      }, { apiKey: process.env.STRIPE_SECRET_KEY });
 
       // Update payment with Stripe session ID
       await Payment.findByIdAndUpdate(payment._id, {
@@ -137,7 +136,7 @@ class PaymentService {
 
       // Check Stripe session status
       if (payment.stripeSessionId) {
-        const session = await this.stripe.checkout.sessions.retrieve(payment.stripeSessionId, { apiKey: STRIPE_SECRET_KEY });
+        const session = await this.stripe.checkout.sessions.retrieve(payment.stripeSessionId, { apiKey: process.env.STRIPE_SECRET_KEY });
         
         if (session.payment_status === 'paid') {
           // Update payment status
@@ -271,7 +270,7 @@ async handleStripeWebhook(signature: string, payload: any): Promise<void> {
     const event = this.stripe.webhooks.constructEvent(
       payload,
       signature,
-      STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!
     );
 
     if (event.type === 'checkout.session.completed') {
@@ -279,12 +278,12 @@ async handleStripeWebhook(signature: string, payload: any): Promise<void> {
       
       const metadata = session.metadata || {};
       
-      if (metadata.merchant === COMPANY_NAME) {
+      if (metadata.merchant === process.env.COMPANY_NAME) {
         await this.processYourTransaction(session);
         return;
       }
       
-      if (metadata.source === COMPANY_NAME) {
+      if (metadata.source === process.env.COMPANY_NAME) {
         await this.processYourTransaction(session);
         return;
       }

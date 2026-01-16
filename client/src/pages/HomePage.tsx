@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { 
   ChevronRight, 
   ShieldCheck, 
@@ -8,31 +7,13 @@ import {
   TrendingUp, 
   Star, 
   Quote, 
-  Car, 
-  CheckCircle, 
-  CreditCard, 
-  AlertCircle,
   HelpCircle,
   ChevronDown,
-  X,
-  Check,
-  Loader2
+  CheckCircle,
+  CreditCard,
+  Car,
 } from 'lucide-react';
-import PricingCard from '../components/PricingCard';
 import { Link } from 'react-router-dom';
-
-type ReportType = 'basic' | 'silver' | 'gold';
-
-interface PricingPlan {
-  id: number;
-  name: string;
-  price: number;
-  features: Array<{
-    title: string;
-    provided: boolean;
-  }>;
-  isPopular: boolean;
-}
 
 interface Service {
   id: number;
@@ -58,96 +39,8 @@ interface FAQ {
 
 const HomePage = () => {
   // State
-  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
-  const [step, setStep] = useState<'initial' | 'preview' | 'checkout' | 'success'>('initial');
   const [openFaqId, setOpenFaqId] = useState<number>(1);
-  const [showPlanWarning, setShowPlanWarning] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentError, setPaymentError] = useState<string>('');
-  const [previewData, setPreviewData] = useState<any>(null);
-
-  // Form handling
-  const vinForm = useForm({
-    defaultValues: {
-      vin: ''
-    }
-  });
-
-  const checkoutForm = useForm({
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: 'US',
-      cardNumber: '',
-      cardExpiry: '',
-      cardCvc: ''
-    }
-  });
-
-  const pricingPlans: PricingPlan[] = [
-    {
-      id: 1,
-      name: 'Basic',
-      price: 50,
-      features: [
-        { title: "1 Vehicle Report", provided: true },
-        { title: "Ownership Costs", provided: true },
-        { title: "Accident Information", provided: true },
-        { title: "Market Value Range", provided: true },
-        { title: "Owner's History", provided: true },
-        { title: "Vehicle Specification", provided: false },
-        { title: "Safety Recall Status", provided: false },
-        { title: "Online Listing History", provided: false },
-        { title: "Warranties", provided: false },
-        { title: "Salvage Information", provided: false },
-        { title: "Installed Equipment", provided: false }
-      ],
-      isPopular: false,
-    },
-    {
-      id: 2,
-      name: 'Silver',
-      price: 80,
-      features: [
-        { title: "1 Vehicle Report", provided: true },
-        { title: "Ownership Costs", provided: true },
-        { title: "Accident Information", provided: true },
-        { title: "Market Value Range", provided: true },
-        { title: "Owner's History", provided: true },
-        { title: "Vehicle Specification", provided: true },
-        { title: "Safety Recall Status", provided: true },
-        { title: "Online Listing History", provided: false },
-        { title: "Warranties", provided: false },
-        { title: "Salvage Information", provided: false },
-        { title: "Installed Equipment", provided: false }
-      ],
-      isPopular: true,
-    },
-    {
-      id: 3,
-      name: 'Gold',
-      price: 100,
-      features: [
-        { title: "1 Vehicle Report", provided: true },
-        { title: "Ownership Costs", provided: true },
-        { title: "Accident Information", provided: true },
-        { title: "Market Value Range", provided: true },
-        { title: "Owner's History", provided: true },
-        { title: "Vehicle Specification", provided: true },
-        { title: "Safety Recall Status", provided: true },
-        { title: "Online Listing History", provided: true },
-        { title: "Warranties", provided: true },
-        { title: "Salvage Information", provided: true },
-        { title: "Installed Equipment", provided: true }
-      ],
-      isPopular: false,
-    },
-  ];
+  const [vin, setVin] = useState('')
 
   const services: Service[] = [
     {
@@ -220,91 +113,6 @@ const HomePage = () => {
     },
   ];
 
-  // Handlers
-  const handlePlanSelect = (plan: PricingPlan) => {
-    setSelectedPlan(plan);
-    localStorage.setItem('selectedPlan', JSON.stringify(plan));
-    
-    // Scroll to VIN entry section
-    setTimeout(() => {
-      const vinSection = document.getElementById('pricing-cta');
-      if (vinSection) {
-        vinSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 300);
-  };
-
-  const handleGetPreview = async (data: { vin: string }) => {
-    const vin = data.vin.toUpperCase();
-    
-    if (vin.length !== 17) {
-      alert('Please enter a valid 17-digit VIN');
-      return;
-    }
-
-    if (!selectedPlan) {
-      setShowPlanWarning(true);
-      const pricingSection = document.getElementById('pricing-section');
-      if (pricingSection) {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
-      }
-      return;
-    }
-
-    setIsProcessing(true);
-    setPaymentError('');
-
-    // Simulate API call
-    setTimeout(() => {
-      const mockPreviewData = {
-        vehicleInfo: {
-          make: 'Honda',
-          model: 'Accord',
-          year: 2020,
-          trim: 'EX-L',
-          vin: vin
-        },
-        highlights: [
-          { label: 'Accident History', value: '1 Record Found', status: 'neutral' as const },
-          { label: 'Title Status', value: 'Clean', status: 'positive' as const },
-          { label: 'Service Records', value: 'Available', status: 'positive' as const },
-          { label: 'Recall Status', value: 'No Open Recalls', status: 'positive' as const }
-        ],
-        availableData: {
-          title: true,
-          accidents: true,
-          service: true,
-          recalls: true
-        }
-      };
-      
-      setPreviewData(mockPreviewData);
-      setIsProcessing(false);
-      setStep('preview');
-    }, 1500);
-  };
-
-  const handleContinueToCheckout = () => {
-    if (!selectedPlan) {
-      setShowPlanWarning(true);
-      return;
-    }
-    setStep('checkout');
-  };
-
-  const handlePayment = async (data: any) => {
-    setIsProcessing(true);
-    setPaymentError('');
-
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      setStep('success');
-      localStorage.removeItem('selectedPlan');
-      setSelectedPlan(null);
-    }, 2000);
-  };
-
   const handleFaqToggle = (id: number) => {
     setOpenFaqId(openFaqId === id ? 0 : id);
   };
@@ -344,14 +152,14 @@ const HomePage = () => {
 
             {/* CTA Buttons with neon green */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link to="/pricing">
+              <a href="#pricing-cta">
                 <button 
                   className="group inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-black bg-neon-green rounded-full hover:bg-neon-green/75 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-neon-green/25"
                 >
-                  Get Your Report Now
-                  <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  Get Free Preview
                 </button>
-              </Link>
+              </a>
+
             </div>
 
             {/* Stats */}
@@ -445,6 +253,102 @@ const HomePage = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-linear-to-br from-black via-gray-900 to-black" id="pricing-cta">
+        <div className="container mx-auto px-4">
+
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neon-green/10 border border-neon-green/30 mb-6">
+                  <span className="text-neon-green font-semibold">STEP 2: ENTER VIN</span>
+                </div>
+                
+                <h2 className="text-5xl font-bold mb-4">
+                  <span className="text-white">Get Your </span>
+                  <span className="text-neon-green">Vehicle Report</span>
+                </h2>
+                
+                <h3 className="text-2xl font-semibold text-gray-300 mb-6">
+                  Enter your VIN for a free preview
+                </h3>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-neon-green" />
+                    <span className="text-gray-300">Free preview with basic information</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-neon-green" />
+                    <span className="text-gray-300">Full report after secure payment</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-neon-green" />
+                    <span className="text-gray-300">Report sent to your email instantly</span>
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <p className="text-gray-400 mb-3">Accepted Payment Methods:</p>
+                  <div className="flex gap-4">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/50">
+                      <CreditCard className="w-5 h-5 text-gray-400" />
+                      <span className="text-gray-300">Credit/Debit</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/50">
+                      <span className="text-gray-300">PayPal</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 rounded-2xl bg-linear-to-br from-gray-900 to-black border border-gray-800 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-lg bg-neon-green/10">
+                    <Car className="w-6 h-6 text-neon-green" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Enter Your VIN</h3>
+                    <p className="text-gray-400 text-sm">Get a free preview instantly</p>
+                  </div>
+                </div>
+
+                <form className="space-y-6">
+                  <div>
+                    <label htmlFor="vin" className="block text-sm font-medium text-gray-400 mb-2">
+                      17-digit Vehicle Identification Number
+                    </label>
+                    <input
+                      type="text"
+                      id="vin"
+                      placeholder="1HGCM82633A123456"
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green"
+                      value={vin}
+                      onChange={(e) => setVin(e.target.value)}
+                      maxLength={17}
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      Found on dashboard or registration documents
+                    </p>
+                  </div>
+
+                  <Link
+                    to={`/preview/?vin=${vin}`}
+                    className="w-full py-3 px-4 bg-neon-green text-black font-semibold rounded-lg hover:bg-green-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                      Get Free Preview
+                  </Link>
+                </form>
+
+                <div className="mt-6 pt-6 border-t border-gray-800">
+                  <p className="text-gray-500 text-sm text-center">
+                    Preview is free. You'll only pay for the full report after seeing what's available.
+                  </p>
+                </div>
+              </div>
+            </div>
+
         </div>
       </section>
 

@@ -5,6 +5,23 @@ import { Report } from '../models/Report.model';
 import { Payment } from '../models/Payment.model';
 
 class ReportController {
+  async getReportPreview(req: Request, res: Response): Promise<void> {
+    try {
+      const { vin } = req.params;
+      const preview = await ReportService.generateReportPreview(vin);
+
+      if (!preview) {
+        logger.error(`Failed to decode VIN ${vin}`);
+        res.status(400).json({ error: 'Failed to decode VIN' });
+      }
+
+      res.status(200).json({ success: true, preview });
+    } catch (error) {
+      logger.error('Error getting report preview:', error);
+      res.status(500).json({ error: 'Failed to get report preview' });
+    }
+  }
+  
   async getReport(req: Request, res: Response): Promise<void> {
     try {
       const { reportId } = req.params;

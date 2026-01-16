@@ -5,6 +5,12 @@ import { body, param } from 'express-validator';
 
 const router = express.Router();
 
+router.get('/get-preview/:vin', 
+  [
+    param('vin').isLength({ min: 17, max: 17 }).withMessage('VIN must be 17 characters')
+  ],
+  ReportController.getReportPreview);
+
 // Create order
 router.post(
   '/create-order',

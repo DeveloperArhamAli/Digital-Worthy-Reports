@@ -1,12 +1,9 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
-import { MONGODB_URI } from '@utils/readDockerSecret';
-
-console.log('Using MongoDB URI:', MONGODB_URI);
 
 export const connectDB = async (): Promise<void> => {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI!);
     logger.info('MongoDB connected successfully');
     
     mongoose.connection.on('error', (error) => {

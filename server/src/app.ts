@@ -10,9 +10,17 @@ import paymentRoutes from './routes/payment.routes';
 import configRoutes from './routes/config.routes';
 import adminRoutes from './routes/admin.routes';
 import { logger } from './utils/logger';
-import { NODE_ENV, PORT, FRONTEND_URL, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS } from '@utils/readDockerSecret';
+import dotenv from 'dotenv';
 
 const app = express();
+
+dotenv.config();
+
+const FRONTEND_URL = process.env.FRONTEND_URL!;
+const RATE_LIMIT_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS!;
+const RATE_LIMIT_MAX_REQUESTS = process.env.RATE_LIMIT_MAX_REQUESTS!;
+const NODE_ENV = process.env.NODE_ENV!;
+const PORT = process.env.PORT!;
 
 connectDB();
 
@@ -26,8 +34,8 @@ app.use(cors({
 }));
 
 const limiter = rateLimit({
-  windowMs: parseInt(RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(RATE_LIMIT_MAX_REQUESTS) || 100,
+  windowMs: parseInt(RATE_LIMIT_WINDOW_MS!) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(RATE_LIMIT_MAX_REQUESTS!) || 100,
   message: 'Too many requests from this IP, please try again later.',
 });
 app.use('/api/', limiter);

@@ -1,6 +1,12 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
-import { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, SMTP_SECURE } from '@utils/readDockerSecret';
+
+const SMTP_HOST = process.env.SMTP_HOST!;
+const SMTP_PORT = process.env.SMTP_PORT!;
+const SMTP_USER = process.env.SMTP_USER!;
+const SMTP_PASS = process.env.SMTP_PASS!;
+const SMTP_FROM = process.env.SMTP_FROM!;
+const SMTP_SECURE = process.env.SMTP_SECURE!;
 
 class EmailService {
   private transporter: nodemailer.Transporter;
@@ -37,7 +43,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Hi ${name},</h2>
             <p>Thank you for your order! Your vehicle history report request has been received.</p>
-            
+
             <div style="background-color: white; padding: 20px; border-left: 4px solid #10B981; margin: 20px 0;">
               <h3>Order Details</h3>
               <p><strong>Order ID:</strong> ${orderId}</p>

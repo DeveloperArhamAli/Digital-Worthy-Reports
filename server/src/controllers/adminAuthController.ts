@@ -17,11 +17,34 @@ declare global {
 }
 
 // ==================== AUTH CONTROLLERS ====================
+
+export const register = async (req: Request, res: Response) => {
+  try {
+    const { username, email, password, role} = req.body;
+
+    const admin = await Admin.create({ username, email, password, role})
+
+    if (admin) {
+      res.json({
+        success: true,
+        message: "Admin created successfully",
+        data: admin
+      })
+    } else {
+      console.error("Error creating Admin")
+    }
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Sever Error"
+    })
+  }
+}
+
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-
-    console.log(email, password);
 
     // Validate input
     if (!email || !password) {

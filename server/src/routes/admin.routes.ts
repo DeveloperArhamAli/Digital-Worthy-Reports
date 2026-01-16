@@ -10,7 +10,7 @@ import {
   deleteAdmin,
   toggleAdminStatus,
   changePassword,
-  getPayments
+  getPayments,
 } from '../controllers/adminAuthController';
 import { authenticate, authorize } from '../middleware/auth';
 

@@ -190,7 +190,7 @@ const AdminPage: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      navigate('/admin-login');
+      navigate('/admin');
     }
   }, [navigate]);
 

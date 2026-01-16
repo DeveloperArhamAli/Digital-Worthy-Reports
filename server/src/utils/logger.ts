@@ -1,5 +1,6 @@
 import winston from 'winston';
-import { NODE_ENV } from "@utils/readDockerSecret"
+
+const NODE_ENV = process.env.NODE_ENV!;
 
 const logger = winston.createLogger({
   level: NODE_ENV === 'production' ? 'info' : 'debug',

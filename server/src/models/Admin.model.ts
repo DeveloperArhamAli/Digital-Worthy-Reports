@@ -1,7 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
-import { JWT_SECRET, JWT_EXPIRES_IN, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_EXPIRES_IN } from "@utils/readDockerSecret"
+
+const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN!;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
+const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN!;
 
 // JWT Types
 export interface JwtPayload {
@@ -15,14 +19,14 @@ export const jwtUtils = {
   generateTokens: (payload: JwtPayload) => {
     const accessToken = jwt.sign(
       payload, 
-      JWT_SECRET, 
-      { expiresIn: JWT_EXPIRES_IN }
+      "fklsdajfowencfsdjalfjweou203u04jfa", 
+      { expiresIn: "1h" }
     );
 
     const refreshToken = jwt.sign(
       payload, 
-      REFRESH_TOKEN_SECRET, 
-      { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
+      "jfwj23084rjdlsajlaJDLSKAJ@#$@#AFJAF", 
+      { expiresIn: "7d" }
     );
 
     return { accessToken, refreshToken };
@@ -36,7 +40,7 @@ export const jwtUtils = {
     try {
       const decoded = jwt.verify(
         token, 
-        JWT_SECRET as string, 
+        process.env.JWT_SECRET as string, 
         verifyOptions
       );
       return decoded as JwtPayload;
@@ -53,7 +57,7 @@ export const jwtUtils = {
     try {
       const decoded = jwt.verify(
         token, 
-        REFRESH_TOKEN_SECRET as string, 
+        process.env.REFRESH_TOKEN_SECRET as string, 
         verifyOptions
       );
       return decoded as JwtPayload;

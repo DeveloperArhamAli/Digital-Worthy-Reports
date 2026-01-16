@@ -1,7 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
-import { CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_CLOUD_NAME } from "@utils/readDockerSecret"
+
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME!;
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY!;
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET!;
 
 cloudinary.config({
   cloud_name: CLOUDINARY_CLOUD_NAME,

@@ -7,10 +7,9 @@ interface TawkToCredentials {
 }
 
 const fetchTawkToCredentials = async (): Promise<TawkToCredentials | null> => {
-  const backendUrl = "http://localhost:5000";
   
   try {
-    const response = await axios.post<TawkToCredentials>(`${backendUrl}/api/config/get-tawkto-credentials`);
+    const response = await axios.post<TawkToCredentials>("/api/config/get-tawkto-credentials");
     return {
       propertyId: response.data.propertyId,
       widgetName: response.data.widgetName
@@ -82,26 +81,6 @@ const LiveChat = () => {
     };
   }, [credentials]);
 
-  const toggleChat = () => {
-    if (window.Tawk_API?.toggle) {
-      window.Tawk_API.toggle();
-    }
-  };
-
-  return (
-    <>
-      {/* Optional Floating Action Button for mobile */}
-      <button
-        onClick={toggleChat}
-        className="fixed bottom-6 right-6 md:hidden z-50 p-3 bg-neon-green text-black rounded-full shadow-lg hover:bg-neon-green-dark transition-all duration-300"
-        aria-label="Open chat"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      </button>
-    </>
-  );
 };
 
 export default LiveChat;

@@ -11,6 +11,7 @@ import PaymentSuccess from './pages/PaymentSuccess.tsx'
 import PaymentCancel from './pages/PaymentCancel.tsx'
 import AdminPage from './pages/AdminPage.tsx'
 import AdminLoginPage from './pages/AdminLoginPage.tsx'
+import VinPreviewPage from './pages/VinPreviewPage.tsx'
 
 const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
       {
         path: "/contact",
         element: <ContactUsPage />
+      },
+      {
+        path: "/preview",
+        element: <VinPreviewPage />
       },
       {
         path: "/payment-success",

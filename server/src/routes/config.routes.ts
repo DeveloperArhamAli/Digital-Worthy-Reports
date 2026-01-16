@@ -1,5 +1,7 @@
 import express from "express";
-import { VITE_TAWKTO_PROPERTY_ID, VITE_TAWKTO_WIDGET_NAME } from "@utils/readDockerSecret"
+
+const VITE_TAWKTO_PROPERTY_ID = process.env.VITE_TAWKTO_PROPERTY_ID!;
+const VITE_TAWKTO_WIDGET_NAME = process.env.VITE_TAWKTO_WIDGET_NAME!;
 
 const router = express.Router();
 
